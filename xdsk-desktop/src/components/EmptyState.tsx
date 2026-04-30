@@ -1,0 +1,24 @@
+// MIT License
+// Copyright (c) Destroyer 2026.
+import type { ReactNode } from 'react';
+import styles from './EmptyState.module.css';
+import { cx } from '../utils/formatters';
+
+interface EmptyStateProps {
+  icon?: ReactNode;
+  title: string;
+  description?: string;
+  action?: ReactNode;
+  className?: string;
+}
+
+export function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
+  return (
+    <div className={cx(styles.root, className)}>
+      {icon && <div className={styles.icon}>{icon}</div>}
+      <p className={styles.title}>{title}</p>
+      {description && <p className={styles.description}>{description}</p>}
+      {action && <div className={styles.action}>{action}</div>}
+    </div>
+  );
+}

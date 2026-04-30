@@ -1,0 +1,25 @@
+.sectionCard {
+  margin-bottom: var(--space-3);
+}
+
+.issue {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  font-size: var(--font-size-xs);
+}
+
+.icon {
+  font-size: 10px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.text {
+  color: var(--text-secondary);
+}
+
+.ok .icon { color: var(--accent-green); }
+.fail .icon { color: var(--accent-red); }
+.fail .text { color: var(--accent-red); }

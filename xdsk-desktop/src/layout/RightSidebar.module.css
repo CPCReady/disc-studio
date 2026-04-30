@@ -1,0 +1,119 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 220px; /* overridden by inline style */
+  flex-shrink: 0;
+  height: 100%;
+  background: var(--bg-sidebar);
+  border-left: 1px solid var(--border-subtle);
+  overflow: hidden;
+  user-select: none;
+  position: relative;
+}
+
+.resizeHandle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  cursor: ew-resize;
+  z-index: 10;
+  transition: background var(--transition-fast);
+}
+
+.resizeHandle:hover {
+  background: var(--accent-blue, rgba(99, 158, 255, 0.35));
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  height: var(--topbar-height);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-3) 0;
+  min-height: 0;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-8) var(--space-4);
+  gap: var(--space-2);
+  text-align: center;
+  color: var(--text-disabled);
+  font-size: var(--font-size-xs);
+}
+
+.emptyIcon {
+  color: var(--text-disabled);
+  margin-bottom: var(--space-1);
+}
+
+.section {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+}
+
+.sectionTitle {
+  display: block;
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-disabled);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-2);
+  padding: 0 var(--space-1);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table tr + tr td {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.key {
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 4px var(--space-1);
+  width: 50%;
+  vertical-align: top;
+}
+
+.val {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  padding: 4px var(--space-1);
+  word-break: break-all;
+}
+
+.checkWrapper {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-subtle);
+  overflow-y: auto;
+  max-height: 50%;
+  min-height: 0;
+}
+
+.checkDivider {
+  padding: var(--space-2) var(--space-3) var(--space-1);
+}

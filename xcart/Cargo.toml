@@ -1,0 +1,15 @@
+[package]
+name = "xcart"
+version = "1.0.0"
+edition = "2021"
+description = "Convert Amstrad CPC DSK disk images to GX-4000 cartridges (.cpr)"
+license = "GPL-2.0"
+authors = ["Destroyer"]
+
+[[bin]]
+name = "xcart"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive", "color", "wrap_help"] }
+thiserror = "1"

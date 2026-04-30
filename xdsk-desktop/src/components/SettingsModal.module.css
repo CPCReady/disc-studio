@@ -1,0 +1,79 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-6);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  justify-content: space-between;
+}
+
+.emulatorRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.pathInput {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.pathField {
+  flex: 1;
+  height: 28px;
+  padding: 0 var(--space-3);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color var(--transition-fast);
+  min-width: 0;
+}
+
+.pathField:focus {
+  border-color: var(--accent-blue);
+}
+
+.browseBtn {
+  height: 28px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition: color var(--transition-fast), background var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.browseBtn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.rowInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.desc {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}

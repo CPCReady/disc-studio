@@ -1,8 +1,167 @@
-# disc — Modern Amstrad CPC DSK Image Tool
+# Disc Image Studio — Suite de herramientas para Amstrad CPC
 
-A fast, modern command-line tool for working with Amstrad CPC DSK disk images, written in Rust.
+**Disc Image Studio** es una suite de herramientas para crear, gestionar e inspeccionar imágenes de disco y cinta del **Amstrad CPC**. Incluye tres CLIs modernos escritos en Rust y una aplicación de escritorio con interfaz gráfica.
 
-Replaces the legacy `iDSK` C++ tool with a clean, cross-platform CLI that handles AMSDOS headers, sector interleaving, and CP/M directory format correctly.
+---
+
+## Herramientas incluidas
+
+| Herramienta | Descripción | README |
+|-------------|-------------|--------|
+| **xdsk** | Manipulación de imágenes de disco DSK | [disc/README.md](disc/README.md) |
+| **xcdt** | Creación e inspección de cintas CDT/TZX | [xcdt/README.md](xcdt/README.md) |
+| **xcart** | Conversión DSK → cartucho GX-4000 CPR | [xcart/README.md](xcart/README.md) |
+| **xDSK Desktop** | Interfaz gráfica para gestión de discos DSK | [disc-desktop/README.md](disc-desktop/README.md) |
+
+---
+
+## Build rápido
+
+Compila todo y copia los artefactos a `dist/`:
+
+```bash
+# Compilar todo (CLIs + GUI)
+./build.sh
+
+# Solo CLIs
+./build.sh --cli-only
+
+# Solo GUI
+./build.sh --gui-only
+
+# Build debug (más rápido, sin optimizaciones)
+./build.sh --debug
+```
+
+**Artefactos en `dist/`:**
+
+```
+dist/
+  xdsk                  # CLI de discos DSK
+  xcdt                  # CLI de cintas CDT/TZX
+  xcart                 # CLI de cartuchos CPR  (requiere ROMs)
+  xDSK Desktop.app      # Aplicación macOS
+  xDSK Desktop_*.dmg    # Instalador macOS
+```
+
+---
+
+## xdsk — Gestión de imágenes DSK
+
+```bash
+# Crear un disco vacío
+xdsk create juego.dsk
+
+# Importar ficheros
+xdsk import juego.dsk cargador.bas
+xdsk import juego.dsk sprites.bin --file-type binary --load 0x4000 --exec 0x4000
+
+# Listar contenido
+xdsk list juego.dsk
+
+# Exportar todos los ficheros BASIC
+xdsk export juego.dsk "*.BAS" --output backup/
+
+# Verificar integridad
+xdsk check juego.dsk
+
+# Comparar dos discos
+xdsk diff juego_v1.dsk juego_v2.dsk
+```
+
+→ [Documentación completa de xdsk](disc/README.md)
+
+---
+
+## xcdt — Gestión de cintas CDT/TZX
+
+```bash
+# Crear cinta con un binario
+xcdt new juego.bin juego.cdt -L 0x4000 -X 0x4000
+
+# Cinta multi-fichero
+xcdt new  loader.bin cinta.cdt -r LOADER -L 0x1000 -X 0x1000
+xcdt save juego.bin  cinta.cdt -r GAME   -L 0x4000 -X 0x4000
+
+# Inspeccionar y verificar
+xcdt cat   cinta.cdt
+xcdt check cinta.cdt
+
+# Renombrar fichero en cinta
+xcdt rename cinta.cdt LOADER MENU
+
+# Convertir a Standard Speed
+xcdt convert cinta.cdt cinta_std.cdt --to 2
+```
+
+→ [Documentación completa de xcdt](xcdt/README.md)
+
+---
+
+## xcart — Conversión DSK → CPR
+
+> **Requisito:** necesita ROMs de Amstrad en `xcart/roms/` (os.rom, basic.rom, amsdos.rom).
+
+```bash
+# Convertir DSK a cartucho GX-4000
+xcart create juego.dsk juego.cpr -c 'run"game"'
+
+# Verificar el cartucho
+xcart check juego.cpr
+
+# Listar chunks del cartucho
+xcart list juego.cpr
+```
+
+→ [Documentación completa de xcart](xcart/README.md)
+
+---
+
+## xDSK Desktop — Interfaz gráfica
+
+Aplicación de escritorio (Tauri + React) para gestión visual de imágenes DSK:
+
+- Explorador de ficheros del disco
+- Importar / exportar / borrar ficheros
+- Visor integrado (BASIC, hex, ASCII, Z80)
+- Verificación de integridad
+- Comparación de discos (diff visual)
+- Lanzar en emulador
+
+→ [Documentación completa de xDSK Desktop](disc-desktop/README.md)
+
+---
+
+## Estructura del proyecto
+
+```
+Disc-Image-Studio/
+  build.sh              # Script de build unificado
+  dist/                 # Artefactos compilados
+  disc/                 # CLI xdsk (imágenes DSK)
+  xcdt/                 # CLI xcdt (cintas CDT/TZX)
+  xcart/                # CLI xcart (cartuchos CPR)
+  disc-desktop/         # GUI xDSK Desktop (Tauri)
+  Examples/             # Imágenes DSK de ejemplo
+  idsk/                 # iDSK legacy (referencia)
+  2cdt/                 # 2cdt legacy (referencia)
+```
+
+---
+
+## Requisitos
+
+| Componente | Versión mínima |
+|------------|----------------|
+| Rust | 1.75+ (stable) |
+| Node.js | 18+ (solo GUI) |
+| npm | 9+ (solo GUI) |
+
+---
+
+## Licencia
+
+MIT License — Copyright (c) 2026 Destroyer
 
 ---
 

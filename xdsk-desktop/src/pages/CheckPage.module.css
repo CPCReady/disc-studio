@@ -1,0 +1,20 @@
+.sectionCard { margin-bottom: var(--space-4); }
+
+.issue {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--font-size-sm);
+}
+
+.issue:last-child { border-bottom: none; }
+
+.icon { font-size: 13px; flex-shrink: 0; }
+
+.ok .icon { color: var(--accent-green); }
+.ok .text { color: var(--text-secondary); }
+
+.fail .icon { color: var(--accent-red); }
+.fail .text { color: var(--text-primary); }
