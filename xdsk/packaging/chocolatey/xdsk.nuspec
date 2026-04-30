@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MIT License - Copyright (c) 2026 Destroyer
+  Chocolatey package specification for xdsk
+  Modern DSK image manipulation tool for Amstrad CPC
+
+  To publish to the Chocolatey Community Repository:
+    1. choco pack xdsk.nuspec
+    2. choco push xdsk.1.0.0.nupkg --source https://push.chocolatey.org --api-key YOUR_API_KEY
+
+  Replace GITHUB_OWNER with the actual GitHub username/organization.
+  Update the checksum64 in tools/chocolateyInstall.ps1 on every release.
+-->
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>xdsk</id>
+    <version>1.0.0</version>
+    <packageSourceUrl>https://github.com/GITHUB_OWNER/xdsk/tree/main/disc/packaging/chocolatey</packageSourceUrl>
+    <owners>Destroyer</owners>
+
+    <title>xdsk - DSK Image Tool for Amstrad CPC</title>
+    <authors>Destroyer</authors>
+    <projectUrl>https://github.com/GITHUB_OWNER/xdsk</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/GITHUB_OWNER/xdsk/main/assets/icon.png</iconUrl>
+    <licenseUrl>https://github.com/GITHUB_OWNER/xdsk/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/GITHUB_OWNER/xdsk</projectSourceUrl>
+    <bugTrackerUrl>https://github.com/GITHUB_OWNER/xdsk/issues</bugTrackerUrl>
+    <tags>amstrad cpc dsk disk-image retro emulation cli</tags>
+
+    <summary>xdsk - Modern DSK image manipulation tool for Amstrad CPC</summary>
+    <description><![CDATA[
+# xdsk
+
+A modern, fast, and user-friendly command-line tool for working with Amstrad CPC DSK disk images.
+
+## Features
+
+- **List** files in a DSK image (table, JSON, CSV, simple formats)
+- **Import** files into DSK images with AMSDOS header support
+- **Export** files from DSK images with optional header stripping
+- **Remove** files from DSK images (with wildcard support)
+- **Create** new blank DSK images
+- **View** file contents: BASIC listing, hex dump, ASCII, Z80 disassembly
+- **Shell completions** for bash, zsh and fish
+- **Man pages** auto-generated from the binary
+
+## Usage
+
+```
+xdsk create game.dsk
+xdsk import game.dsk LOADER.BIN --file-type binary --load 0x4000 --exec 0x4000
+xdsk list game.dsk
+xdsk export game.dsk LOADER.BIN --output ./extracted/
+xdsk remove game.dsk LOADER.BIN --force
+```
+
+## Aliases
+
+Every subcommand has a short alias: `ls`, `add`, `get`, `rm`, `new`.
+    ]]></description>
+    <releaseNotes>https://github.com/GITHUB_OWNER/xdsk/releases/tag/v1.0.0</releaseNotes>
+
+    <dependencies>
+      <!-- No runtime dependencies: xdsk is a self-contained static binary -->
+    </dependencies>
+  </metadata>
+
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

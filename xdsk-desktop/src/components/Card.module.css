@@ -1,0 +1,32 @@
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.body {
+  padding: var(--space-4) var(--space-6);
+}
+
+.compact .body {
+  padding: var(--space-3) var(--space-4);
+}
+
+.compact .header {
+  padding: var(--space-2) var(--space-4);
+}
