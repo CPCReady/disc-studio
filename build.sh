@@ -259,77 +259,83 @@ build_linux() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Windows x86_64 (Docker + mingw-w64 — imagen oficial rust:slim)
+# Windows x86_64 — xdsk CLI + xdsk-desktop NSIS .exe
+# Prioridad: OrbStack Ubuntu VM > Docker (linux/amd64)
 # ─────────────────────────────────────────────────────────────────────────────
 build_windows() {
   local rust_target="x86_64-pc-windows-gnu"
   local out="$DIST/windows"
 
-  header "Windows · $rust_target (Docker mingw-w64)"
+  # ── Elegir método de ejecución ──────────────────────────────────────────────
+  # OrbStack Ubuntu VM: nativo, rápido, herramientas persistentes
+  # Docker linux/amd64: fallback via QEMU (más lento, reinstala cada vez)
+  local RUN_CMD=""
+  local WORKSPACE_IN_HOST="$ROOT"
 
-  if ! command -v docker &>/dev/null || ! docker info &>/dev/null 2>&1; then
-    warn "Docker no disponible — target windows omitido"
+  if command -v orb &>/dev/null && orb list 2>/dev/null | grep -q "^ubuntu"; then
+    header "Windows · $rust_target (OrbStack ubuntu VM)"
+    RUN_CMD="orb run ubuntu --"
+    # En OrbStack el home de macOS es accesible en la VM con la misma ruta
+  elif command -v docker &>/dev/null && docker info &>/dev/null 2>&1; then
+    header "Windows · $rust_target (Docker linux/amd64)"
+    # Usamos una función auxiliar para docker run
+    RUN_CMD="__docker_run"
+  else
+    warn "Ni OrbStack Ubuntu ni Docker disponibles — target windows omitido"
     return
   fi
 
-  # ── CLI: solo xdsk ──
-  if [[ "$GUI_ONLY" == false ]]; then
-    local src_dir="$ROOT/xdsk"
-    if [[ ! -d "$src_dir" ]]; then
-      warn "xdsk: directorio no encontrado — omitido"
-    else
-      info "docker build xdsk → windows/amd64 (mingw-w64)"
-      docker run --rm \
-        -v "$src_dir:/project" \
-        -v "xdsk-cargo-cache:/usr/local/cargo/registry" \
-        -w /project \
-        rust:slim \
-        bash -c "apt-get update -qq && \
-          apt-get install -y -qq gcc-mingw-w64-x86-64 && \
-          rustup target add x86_64-pc-windows-gnu && \
-          cargo build --release --target x86_64-pc-windows-gnu" || { fail "xdsk Windows build fallido"; ((ERRORS++)); }
-      copy_bin "$src_dir/target/$rust_target/release/xdsk.exe" "$out/xdsk.exe"
-      if [[ -f "$out/xdsk.exe" ]]; then
-        cp "$out/xdsk.exe" "$GUI_DIR/src-tauri/binaries/xdsk-$rust_target.exe"
-        info "Sidecar xdsk-$rust_target.exe actualizado"
-      fi
-    fi
-  fi
-
-  # ── GUI Tauri Windows (NSIS .exe via Docker + mingw-w64 + NSIS) ──
-  if [[ "$CLI_ONLY" == false ]]; then
-    info "Construyendo xdsk-desktop para Windows (NSIS .exe) en Docker..."
-    info "Primera ejecución: instala rustup + NSIS dentro del contenedor (~5 min)"
-
+  # Función auxiliar para Docker
+  __docker_run() {
     docker run --rm \
       --platform linux/amd64 \
-      -v "$ROOT:/workspace" \
-      -v "xdsk-cargo-cache:/usr/local/cargo/registry" \
-      -w /workspace \
-      node:20-slim \
-      bash -c "
-        set -e
-        apt-get update -qq
-        apt-get install -y -qq curl gcc-mingw-w64-x86-64 nsis
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal --no-modify-path
-        export PATH=\"/root/.cargo/bin:\$PATH\"
-        rustup target add x86_64-pc-windows-gnu
+      -v "$ROOT:$ROOT" \
+      -v "xdsk-cargo-cache-win:/root/.cargo/registry" \
+      -w "$ROOT" \
+      ubuntu:22.04 \
+      bash -c "$*"
+  }
 
-        # Sidecar xdsk para Tauri
-        cd /workspace/xdsk
-        cargo build --release --target x86_64-pc-windows-gnu
-        cp target/x86_64-pc-windows-gnu/release/xdsk.exe /workspace/xdsk-desktop/src-tauri/binaries/xdsk-x86_64-pc-windows-gnu.exe
+  # ── Script de build (mismo para OrbStack y Docker) ─────────────────────────
+  local BUILD_SCRIPT
+  BUILD_SCRIPT="
+set -e
 
-        # GUI xdsk-desktop
-        cd /workspace/xdsk-desktop
-        npm ci --silent
-        npm run tauri build -- --target x86_64-pc-windows-gnu --bundles nsis
-      " || { fail "GUI Windows (NSIS) build fallido"; ((ERRORS++)); return; }
+# ── Dependencias del sistema (idempotente: solo instala si falta) ──
+if ! command -v x86_64-w64-mingw32-gcc &>/dev/null || ! command -v makensis &>/dev/null || ! command -v node &>/dev/null; then
+  apt-get update -qq
+  apt-get install -y -qq build-essential curl gcc-mingw-w64-x86-64 nsis nodejs npm
+fi
 
-    local nsis_dir="$GUI_DIR/src-tauri/target/$rust_target/release/bundle/nsis"
-    copy_bundles "$nsis_dir" "$out" "*.exe"
-    success "Instalador Windows NSIS generado en dist/windows/"
+# ── Rust + target Windows ──
+if ! command -v cargo &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal --no-modify-path
+fi
+export PATH=\"\$HOME/.cargo/bin:\$PATH\"
+rustup target add x86_64-pc-windows-gnu 2>/dev/null || true
+
+# ── CLI xdsk ──
+cd $ROOT/xdsk
+cargo build --release --target x86_64-pc-windows-gnu
+cp target/x86_64-pc-windows-gnu/release/xdsk.exe \
+   $ROOT/xdsk-desktop/src-tauri/binaries/xdsk-x86_64-pc-windows-gnu.exe
+
+# ── GUI xdsk-desktop (NSIS) ──
+cd $ROOT/xdsk-desktop
+npm ci --silent
+npm run tauri build -- --target x86_64-pc-windows-gnu --bundles nsis
+"
+
+  if [[ "$RUN_CMD" == "__docker_run" ]]; then
+    __docker_run "$BUILD_SCRIPT" || { fail "Windows build fallido"; ((ERRORS++)); return; }
+  else
+    $RUN_CMD bash -c "$BUILD_SCRIPT" || { fail "Windows build fallido"; ((ERRORS++)); return; }
   fi
+
+  local nsis_dir="$GUI_DIR/src-tauri/target/$rust_target/release/bundle/nsis"
+  copy_bin "$ROOT/xdsk/target/$rust_target/release/xdsk.exe" "$out/xdsk.exe"
+  copy_bundles "$nsis_dir" "$out" "*.exe"
+  success "Instalador Windows NSIS generado en dist/windows/"
 }
 
 # =============================================================================
