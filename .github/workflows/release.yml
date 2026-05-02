@@ -1,0 +1,183 @@
+name: Release
+
+# Creates a GitHub Release with all platform installers + standalone xdsk CLI binaries.
+#
+# Triggers:
+#   • Push of a tag matching v* (e.g.  git tag v1.0.1 && git push origin v1.0.1)
+#   • Manual dispatch (enter the tag name in the input field)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.0.1)'
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  # Resolves to the pushed tag OR the manually entered tag name
+  RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────────
+  # Matrix: build xdsk CLI + xdsk-desktop for every platform, then attach
+  # all bundles to a single GitHub Release via tauri-action.
+  # ────────────────────────────────────────────────────────────────────────────
+  build-and-release:
+    name: Release · ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ── macOS Apple Silicon ────────────────────────────────────────────
+          - name: macOS ARM64
+            runner: macos-15
+            rust-target: aarch64-apple-darwin
+            sidecar: xdsk-aarch64-apple-darwin
+            cli-binary: xdsk
+            cli-asset: xdsk-macos-arm64
+            exe-ext: ''
+
+          # ── macOS Intel ────────────────────────────────────────────────────
+          - name: macOS x86_64
+            runner: macos-13
+            rust-target: x86_64-apple-darwin
+            sidecar: xdsk-x86_64-apple-darwin
+            cli-binary: xdsk
+            cli-asset: xdsk-macos-x86_64
+            exe-ext: ''
+
+          # ── Linux x86_64 ───────────────────────────────────────────────────
+          - name: Linux x86_64
+            runner: ubuntu-22.04
+            rust-target: x86_64-unknown-linux-gnu
+            sidecar: xdsk-x86_64-unknown-linux-gnu
+            cli-binary: xdsk
+            cli-asset: xdsk-linux-x86_64
+            exe-ext: ''
+
+          # ── Windows x86_64 ─────────────────────────────────────────────────
+          - name: Windows x86_64
+            runner: windows-latest
+            rust-target: x86_64-pc-windows-msvc
+            sidecar: xdsk-x86_64-pc-windows-msvc.exe
+            cli-binary: xdsk.exe
+            cli-asset: xdsk-windows-x86_64.exe
+            exe-ext: '.exe'
+
+    steps:
+      # ── Checkout ────────────────────────────────────────────────────────────
+      - uses: actions/checkout@v4
+
+      # ── Linux system dependencies ───────────────────────────────────────────
+      - name: Install Linux dependencies
+        if: matrix.runner == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      # ── Node.js ─────────────────────────────────────────────────────────────
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: xdsk-desktop/package-lock.json
+
+      # ── Rust toolchain + target ─────────────────────────────────────────────
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
+
+      # ── Rust build cache ────────────────────────────────────────────────────
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            xdsk
+            xdsk-desktop/src-tauri
+
+      # ── Build xdsk CLI ──────────────────────────────────────────────────────
+      - name: Build xdsk CLI
+        working-directory: xdsk
+        run: cargo build --release --target ${{ matrix.rust-target }}
+
+      # ── Copy sidecar binary into Tauri binaries/ ────────────────────────────
+      - name: Copy xdsk sidecar binary
+        shell: bash
+        run: |
+          cp "xdsk/target/${{ matrix.rust-target }}/release/xdsk${{ matrix.exe-ext }}" \
+             "xdsk-desktop/src-tauri/binaries/${{ matrix.sidecar }}"
+
+      # ── Frontend deps ───────────────────────────────────────────────────────
+      - name: Install npm dependencies
+        working-directory: xdsk-desktop
+        run: npm ci
+
+      # ── Build Tauri app + create/update GitHub Release ──────────────────────
+      # tauri-action creates a draft release on the first platform to finish
+      # and attaches each platform's bundles as they complete.
+      - name: Build Tauri app and publish to release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: xdsk-desktop
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseName: 'xDSK Desktop ${{ env.RELEASE_TAG }}'
+          releaseBody: |
+            ## xDSK Desktop ${{ env.RELEASE_TAG }}
+
+            Modern GUI tool for Amstrad CPC DSK disk image management.
+
+            ### xDSK Desktop installers
+
+            | Platform | File |
+            |----------|------|
+            | macOS (Apple Silicon) | `xdsk-desktop_*_aarch64.dmg` |
+            | macOS (Intel)         | `xdsk-desktop_*_x64.dmg` |
+            | Linux                 | `xdsk-desktop_*_amd64.AppImage` · `xdsk-desktop_*_amd64.deb` |
+            | Windows               | `xdsk-desktop_*_x64_en-US.msi` · `xdsk-desktop_*_x64-setup.exe` |
+
+            ### xdsk CLI (standalone)
+
+            | Platform | File |
+            |----------|------|
+            | macOS (Apple Silicon) | `xdsk-macos-arm64` |
+            | macOS (Intel)         | `xdsk-macos-x86_64` |
+            | Linux x86_64          | `xdsk-linux-x86_64` |
+            | Windows x86_64        | `xdsk-windows-x86_64.exe` |
+
+            ---
+            Built with Tauri 2 · Rust · React 18
+          releaseDraft: true
+          prerelease: false
+          args: --target ${{ matrix.rust-target }}
+
+      # ── Rename xdsk CLI binary with platform suffix ─────────────────────────
+      - name: Rename xdsk CLI binary for upload
+        shell: bash
+        run: |
+          cp "xdsk/target/${{ matrix.rust-target }}/release/xdsk${{ matrix.exe-ext }}" \
+             "xdsk/target/${{ matrix.rust-target }}/release/${{ matrix.cli-asset }}"
+
+      # ── Attach standalone xdsk CLI binary to the release ────────────────────
+      - name: Upload xdsk CLI binary to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          files: xdsk/target/${{ matrix.rust-target }}/release/${{ matrix.cli-asset }}
+          draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

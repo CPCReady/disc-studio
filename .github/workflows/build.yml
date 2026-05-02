@@ -1,0 +1,133 @@
+name: Build CI
+
+# Validates that xdsk CLI + xdsk-desktop compile correctly on every push/PR.
+# Uploads compiled artifacts (retained 7 days) for manual testing.
+
+on:
+  push:
+    branches: [main, arreglos-visuales]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build · ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ── macOS Apple Silicon ──────────────────────────────────────────
+          - name: macOS ARM64
+            runner: macos-15
+            rust-target: aarch64-apple-darwin
+            sidecar: xdsk-aarch64-apple-darwin
+            cli-binary: xdsk
+            cli-artifact: xdsk-macos-arm64
+            exe-ext: ''
+
+          # ── macOS Intel ──────────────────────────────────────────────────
+          - name: macOS x86_64
+            runner: macos-13
+            rust-target: x86_64-apple-darwin
+            sidecar: xdsk-x86_64-apple-darwin
+            cli-binary: xdsk
+            cli-artifact: xdsk-macos-x86_64
+            exe-ext: ''
+
+          # ── Linux x86_64 ─────────────────────────────────────────────────
+          - name: Linux x86_64
+            runner: ubuntu-22.04
+            rust-target: x86_64-unknown-linux-gnu
+            sidecar: xdsk-x86_64-unknown-linux-gnu
+            cli-binary: xdsk
+            cli-artifact: xdsk-linux-x86_64
+            exe-ext: ''
+
+          # ── Windows x86_64 ───────────────────────────────────────────────
+          - name: Windows x86_64
+            runner: windows-latest
+            rust-target: x86_64-pc-windows-msvc
+            sidecar: xdsk-x86_64-pc-windows-msvc.exe
+            cli-binary: xdsk.exe
+            cli-artifact: xdsk-windows-x86_64.exe
+            exe-ext: '.exe'
+
+    steps:
+      # ── Checkout ──────────────────────────────────────────────────────────
+      - uses: actions/checkout@v4
+
+      # ── Linux system dependencies (WebKit, AppIndicator, etc.) ────────────
+      - name: Install Linux dependencies
+        if: matrix.runner == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      # ── Node.js ───────────────────────────────────────────────────────────
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: xdsk-desktop/package-lock.json
+
+      # ── Rust toolchain + target ───────────────────────────────────────────
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
+
+      # ── Rust build cache ──────────────────────────────────────────────────
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            xdsk
+            xdsk-desktop/src-tauri
+
+      # ── Build xdsk CLI ────────────────────────────────────────────────────
+      - name: Build xdsk CLI
+        working-directory: xdsk
+        run: cargo build --release --target ${{ matrix.rust-target }}
+
+      # ── Copy sidecar binary into Tauri binaries/ ──────────────────────────
+      - name: Copy xdsk sidecar binary
+        shell: bash
+        run: |
+          cp "xdsk/target/${{ matrix.rust-target }}/release/xdsk${{ matrix.exe-ext }}" \
+             "xdsk-desktop/src-tauri/binaries/${{ matrix.sidecar }}"
+
+      # ── Frontend deps ─────────────────────────────────────────────────────
+      - name: Install npm dependencies
+        working-directory: xdsk-desktop
+        run: npm ci
+
+      # ── Build Tauri app ───────────────────────────────────────────────────
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: xdsk-desktop
+          args: --target ${{ matrix.rust-target }}
+
+      # ── Upload xdsk CLI binary as workflow artifact ───────────────────────
+      - name: Upload xdsk CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.cli-artifact }}
+          path: xdsk/target/${{ matrix.rust-target }}/release/${{ matrix.cli-binary }}
+          retention-days: 7
+
+      # ── Upload Tauri bundles as workflow artifact ──────────────────────────
+      - name: Upload Tauri bundles
+        uses: actions/upload-artifact@v4
+        with:
+          name: xdsk-desktop-${{ matrix.name }}
+          path: xdsk-desktop/src-tauri/target/${{ matrix.rust-target }}/release/bundle/
+          retention-days: 7
