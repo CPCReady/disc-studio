@@ -108,9 +108,12 @@ success "dist/ limpiado y recreado"
 
 # Comprueba si cross está instalado, si no lo instala
 ensure_cross() {
+  # Asegurar que ~/.cargo/bin está en PATH (puede no estarlo en subshells)
+  export PATH="$HOME/.cargo/bin:$PATH"
   if ! command -v cross &>/dev/null; then
     info "Instalando cross (cross-compilation)..."
     cargo install cross --git https://github.com/cross-rs/cross
+    export PATH="$HOME/.cargo/bin:$PATH"
   fi
 }
 
