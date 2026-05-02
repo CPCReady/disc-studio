@@ -234,7 +234,7 @@ build_linux() {
         fi
       fi
       info "cross build $cli (release) → $rust_target"
-      (cd "$src_dir" && cross build --release --target "$rust_target") || { fail "$cli Linux build fallido"; ((ERRORS++)); continue; }
+      (cd "$src_dir" && CROSS_CUSTOM_TOOLCHAIN=1 cross build --release --target "$rust_target") || { fail "$cli Linux build fallido"; ((ERRORS++)); continue; }
       copy_bin "$src_dir/target/$rust_target/release/$cli" "$out/$cli"
     done
 
@@ -304,7 +304,7 @@ build_windows() {
         fi
       fi
       info "cross build $cli (release) → $rust_target"
-      (cd "$src_dir" && cross build --release --target "$rust_target") || { fail "$cli Windows build fallido"; ((ERRORS++)); continue; }
+      (cd "$src_dir" && CROSS_CUSTOM_TOOLCHAIN=1 cross build --release --target "$rust_target") || { fail "$cli Windows build fallido"; ((ERRORS++)); continue; }
       copy_bin "$src_dir/target/$rust_target/release/$cli.exe" "$out/$cli.exe"
     done
 
