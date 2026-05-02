@@ -189,16 +189,42 @@
 }
 
 /* Font size overrides via data-font-size attribute on shell root */
-[data-font-size="sm"] {
+/* Default (no override) = 13 px base */
+[data-font-size="11"] {
+  --font-size-xs:   9px;
+  --font-size-sm:   10px;
+  --font-size-base: 11px;
+  --font-size-md:   12px;
+  --font-size-lg:   13px;
+}
+
+[data-font-size="12"] {
   --font-size-xs:   10px;
   --font-size-sm:   11px;
   --font-size-base: 12px;
   --font-size-md:   13px;
+  --font-size-lg:   14px;
 }
 
-[data-font-size="lg"] {
+[data-font-size="14"] {
+  --font-size-xs:   12px;
+  --font-size-sm:   13px;
+  --font-size-base: 14px;
+  --font-size-md:   15px;
+  --font-size-lg:   16px;
+}
+
+[data-font-size="15"] {
   --font-size-xs:   12px;
   --font-size-sm:   13px;
   --font-size-base: 15px;
   --font-size-md:   16px;
+  --font-size-lg:   17px;
 }
+
+/* Font family overrides via data-font-family attribute on shell root */
+/* Default (no override) = IBM Plex Sans */
+[data-font-family="manrope"] { --font-sans: 'Manrope', sans-serif; }
+[data-font-family="inter"]   { --font-sans: 'Inter', sans-serif; }
+[data-font-family="nunito"]  { --font-sans: 'Nunito Sans', sans-serif; }
+[data-font-family="system"]  { --font-sans: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }

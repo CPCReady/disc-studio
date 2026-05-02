@@ -4,12 +4,12 @@ import { useRef, useState, useCallback } from 'react';
 import { GripHorizontal } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { useI18n } from '../i18n/useI18n';
+import { useSettingsStore } from '../store/settingsStore';
 import { ViewPanel } from '../panels/ViewPanel';
 import type { BottomTabId } from '../types/app';
 import styles from './BottomPanel.module.css';
 
 const MIN_HEIGHT = 120;
-const DEFAULT_HEIGHT = 200;
 
 export function BottomPanel() {
   const {
@@ -19,20 +19,25 @@ export function BottomPanel() {
     toggleBottomPanel,
   } = useAppStore();
   const { t } = useI18n();
-  const [panelHeight, setPanelHeight] = useState(DEFAULT_HEIGHT);
+  const { bottomPanelHeight, setBottomPanelHeight } = useSettingsStore();
+  const [panelHeight, setPanelHeight] = useState(bottomPanelHeight);
+  const currentHeight = useRef(bottomPanelHeight);
   const dragStart = useRef<{ y: number; h: number } | null>(null);
 
   const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    dragStart.current = { y: e.clientY, h: panelHeight };
+    dragStart.current = { y: e.clientY, h: currentHeight.current };
     document.body.style.cursor = 'ns-resize';
 
     const onMove = (ev: MouseEvent) => {
       if (!dragStart.current) return;
       const delta = dragStart.current.y - ev.clientY;
-      setPanelHeight(Math.max(MIN_HEIGHT, dragStart.current.h + delta));
+      const next = Math.max(MIN_HEIGHT, dragStart.current.h + delta);
+      currentHeight.current = next;
+      setPanelHeight(next);
     };
     const onUp = () => {
+      setBottomPanelHeight(currentHeight.current);
       dragStart.current = null;
       document.body.style.cursor = '';
       window.removeEventListener('mousemove', onMove);
@@ -40,7 +45,7 @@ export function BottomPanel() {
     };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
-  }, [panelHeight]);
+  }, [setBottomPanelHeight]);
 
   const TABS: { id: BottomTabId; label: string }[] = [
     { id: 'view',    label: t('panel_view') },

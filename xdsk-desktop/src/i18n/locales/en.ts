@@ -35,7 +35,7 @@ const en = {
   topbar_console: 'Log',
   topbar_settings: 'Settings',
   topbar_theme: 'Theme',
-  topbar_create_dsk: 'Create DSK',
+  topbar_create_dsk: 'Create',
   topbar_compare: 'Compare',
 
   // Disk tab bar
@@ -222,11 +222,10 @@ const en = {
   settings_emulator_path: 'Emulator Path',
   settings_emulator_path_desc: 'Path to the RetroVirtualMachine executable.',
   settings_emulator_browse: 'Browse',
+  settings_font_family: 'Font Family',
+  settings_font_family_desc: 'Select the interface typeface.',
   settings_font_size: 'Font Size',
-  settings_font_size_desc: 'Adjust the interface font size.',
-  settings_font_size_sm: 'Small',
-  settings_font_size_md: 'Medium',
-  settings_font_size_lg: 'Large',
+  settings_font_size_desc: 'Select the interface font size (px).',
 
   // Right sidebar
   right_info: 'Information',
@@ -235,6 +234,9 @@ const en = {
   right_section_blockmap: 'Block Map',
   right_verification: 'Verification',
   right_no_disk: 'No disk open',
+
+  // Footer
+  footer_copyright: '© 2026 Destroyer',
 } as const;
 
 export type TranslationKey = keyof typeof en;

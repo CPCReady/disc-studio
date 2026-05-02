@@ -34,7 +34,7 @@ const fr: Record<TranslationKey, string> = {
   topbar_console: 'Journal',
   topbar_settings: 'Paramètres',
   topbar_theme: 'Thème',
-  topbar_create_dsk: 'Créer DSK',
+  topbar_create_dsk: 'Créer',
   topbar_compare: 'Comparer',
 
   tab_no_disk: 'Aucun disque',
@@ -203,11 +203,10 @@ const fr: Record<TranslationKey, string> = {
   settings_save: 'Enregistrer',  settings_emulator_path: 'Chemin de l’émulateur',
   settings_emulator_path_desc: 'Chemin vers l’exécutable RetroVirtualMachine.',
   settings_emulator_browse: 'Parcourir',
+  settings_font_family: 'Police de caractères',
+  settings_font_family_desc: 'Sélectionnez la police de l\'interface.',
   settings_font_size: 'Taille de police',
-  settings_font_size_desc: 'Ajustez la taille de police de l’interface.',
-  settings_font_size_sm: 'Petit',
-  settings_font_size_md: 'Moyen',
-  settings_font_size_lg: 'Grand',
+  settings_font_size_desc: 'Sélectionnez la taille de police en pixels.',
 
   // Barre latérale droite
   right_info: 'Informations',
@@ -216,6 +215,9 @@ const fr: Record<TranslationKey, string> = {
   right_section_blockmap: 'Block Map',
   right_verification: 'Vérification',
   right_no_disk: 'Aucun disque ouvert',
+
+  // Footer
+  footer_copyright: '© 2026 Destroyer',
 };
 
 export default fr;
