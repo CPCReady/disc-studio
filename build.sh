@@ -1,27 +1,48 @@
 #!/usr/bin/env bash
 # MIT License — Copyright (c) Destroyer 2026
 # =============================================================================
-# build.sh — Compila todos los CLIs y el GUI de Disc Image Studio
+# build.sh — Compila xDSK Desktop + CLIs para múltiples plataformas
 # =============================================================================
 #
 # USO
-#   ./build.sh              # Compila todo
-#   ./build.sh --cli-only   # Solo CLIs (salta GUI)
-#   ./build.sh --gui-only   # Solo GUI (salta CLIs)
-#   ./build.sh --debug      # Modo debug (más rápido, binarios más grandes)
-#   ./build.sh --target <TRIPLE>  # Fuerza un target Rust específico
+#   ./build.sh                        # Todos los targets disponibles
+#   ./build.sh --target macos         # Solo macOS (host, sin Docker)
+#   ./build.sh --target linux         # Solo Linux x86_64 (Docker)
+#   ./build.sh --target windows       # Solo Windows x86_64 (Docker)
+#   ./build.sh --cli-only             # Solo CLIs, sin GUI
+#   ./build.sh --gui-only             # Solo GUI, sin CLIs
+#   ./build.sh --no-docker            # Deshabilita Docker (solo host)
 #
-# SALIDA
-#   dist/xdsk               CLI — manipulación de imágenes DSK
-#   dist/xcdt               CLI — imágenes de cassette CDT/TZX
-#   dist/xcart              CLI — cartuchos GX-4000 CPR  (requiere ROMs)
-#   dist/xDSK Desktop.app   Aplicación de escritorio macOS
-#   dist/*.dmg              Instalador macOS (si Tauri lo genera)
+# TARGETS SOPORTADOS
+#   macos     → aarch64-apple-darwin  (compilado en host macOS)
+#   linux     → x86_64-unknown-linux-gnu  (Docker: ghcr.io/cross-rs/...)
+#   windows   → x86_64-pc-windows-gnu    (Docker: cross)
+#
+# SALIDA  (dist/ se borra y recrea en cada ejecución)
+#   dist/
+#     macos/
+#       xdsk                          CLI para macOS ARM64
+#       xcdt                          CLI para macOS ARM64
+#       xcart                         CLI para macOS ARM64
+#       xDSK Desktop.app/             Bundle .app
+#       *.dmg                         Instalador DMG
+#     linux/
+#       xdsk                          CLI Linux x86_64
+#       xcdt
+#       xcart
+#       *.AppImage                    Instalador AppImage
+#       *.deb                         Paquete Debian
+#     windows/
+#       xdsk.exe                      CLI Windows x86_64
+#       xcdt.exe
+#       xcart.exe
+#       *-setup.exe                   Instalador NSIS
+#       *.msi                         Instalador MSI
 #
 # REQUISITOS
-#   - rustup + toolchain stable  (para los CLIs)
-#   - node + npm                 (para el GUI)
-#   - cargo-tauri                (npm install lo instala automáticamente)
+#   macOS  : rustup, node/npm, @tauri-apps/cli
+#   Linux  : Docker con imagen cross-rs o ghcr.io/cross-rs
+#   Windows: Docker con imagen cross-rs
 # =============================================================================
 
 set -euo pipefail
@@ -39,214 +60,276 @@ header()  { echo -e "\n${BOLD}━━━ $* ━━━${RESET}"; }
 # ── Rutas ─────────────────────────────────────────────────────────────────────
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DIST="$ROOT/dist"
+GUI_DIR="$ROOT/xdsk-desktop"
 
 # ── Argumentos ────────────────────────────────────────────────────────────────
 CLI_ONLY=false
 GUI_ONLY=false
-PROFILE=release
-TARGET=""
+USE_DOCKER=true
+TARGETS=()
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     --cli-only)  CLI_ONLY=true ;;
     --gui-only)  GUI_ONLY=true ;;
-    --debug)     PROFILE=debug ;;
-    --target)    TARGET="$2"; shift ;;
+    --no-docker) USE_DOCKER=false ;;
+    --target)
+      TARGETS+=("$2"); shift ;;
     -h|--help)
-      echo "Uso: $0 [--cli-only] [--gui-only] [--debug] [--target TRIPLE]"
-      echo ""
-      echo "  --cli-only   Solo compilar CLIs (xdsk, xcdt, xcart)"
-      echo "  --gui-only   Solo compilar GUI (xDSK Desktop)"
-      echo "  --debug      Perfil debug (más rápido, sin optimizaciones)"
-      echo "  --target T   Target Rust (ej. aarch64-apple-darwin)"
+      sed -n '3,50p' "$0" | grep '^#' | sed 's/^# \?//'
       exit 0 ;;
-    *) echo "Argumento desconocido: $1" >&2; exit 1 ;;
+    *) fail "Argumento desconocido: $1"; exit 1 ;;
   esac
   shift
 done
 
-# ── Detectar target ───────────────────────────────────────────────────────────
-if [[ -z "$TARGET" ]]; then
-  if ! command -v rustc &>/dev/null; then
-    fail "rustc no encontrado. Instala Rust: https://rustup.rs"
-    exit 1
-  fi
-  TARGET="$(rustc -vV 2>/dev/null | awk '/^host:/ { print $2 }')"
-  if [[ -z "$TARGET" ]]; then
-    fail "No se pudo detectar el target Rust."
-    exit 1
+# Si no se especificaron targets, construir todos los posibles
+if [[ ${#TARGETS[@]} -eq 0 ]]; then
+  TARGETS=(macos)
+  if [[ "$USE_DOCKER" == true ]] && command -v docker &>/dev/null && docker info &>/dev/null 2>&1; then
+    TARGETS+=(linux windows)
+  else
+    warn "Docker no disponible — solo se compilará para macOS (host)"
+    warn "Para compilar Linux/Windows instala Docker o usa --no-docker"
   fi
 fi
 
-# ── Preparar dist ─────────────────────────────────────────────────────────────
-mkdir -p "$DIST"
-
 ERRORS=0
 
-# ── Función: compilar un CLI ──────────────────────────────────────────────────
-build_cli() {
-  local name="$1"
-  local dir="$2"
-  local src_dir="$ROOT/$dir"
+# ── Limpiar dist ──────────────────────────────────────────────────────────────
+header "Limpiando dist/"
+rm -rf "$DIST"
+mkdir -p "$DIST"/{macos,linux,windows}
+success "dist/ limpiado y recreado"
 
-  header "Compilando $name"
+# =============================================================================
+# HELPERS
+# =============================================================================
 
-  if [[ ! -d "$src_dir" ]]; then
-    fail "Directorio no encontrado: $src_dir"
-    ((ERRORS++))
-    return
+# Comprueba si cross está instalado, si no lo instala
+ensure_cross() {
+  if ! command -v cross &>/dev/null; then
+    info "Instalando cross (cross-compilation)..."
+    cargo install cross --git https://github.com/cross-rs/cross
   fi
+}
 
-  local cargo_args=(--target "$TARGET")
-  [[ "$PROFILE" == "release" ]] && cargo_args+=(--release)
-
-  info "cargo build ${cargo_args[*]}"
-  if ! (cd "$src_dir" && cargo build "${cargo_args[@]}"); then
-    fail "$name: build fallido"
-    ((ERRORS++))
-    return
-  fi
-
-  local bin="$src_dir/target/$TARGET/$PROFILE/$name"
-  if [[ -f "$bin" ]]; then
-    cp "$bin" "$DIST/$name"
-    success "$name → dist/$name  ($(du -sh "$DIST/$name" | cut -f1))"
+# Copia un binario a dist/<plataforma>/
+copy_bin() {
+  local src="$1" dst="$2"
+  if [[ -f "$src" ]]; then
+    cp "$src" "$dst"
+    success "$(basename "$dst")  ($(du -sh "$dst" | cut -f1))"
   else
-    fail "$name: binario no encontrado en $bin"
+    fail "Binario no encontrado: $src"
     ((ERRORS++))
   fi
 }
 
-# ── Compilar CLIs ─────────────────────────────────────────────────────────────
-if [[ "$GUI_ONLY" == false ]]; then
-
-  # xdsk — en carpeta disc/ (o xdsk/ si ya se renombró)
-  if [[ -d "$ROOT/xdsk" ]]; then
-    build_cli xdsk xdsk
-  elif [[ -d "$ROOT/disc" ]]; then
-    build_cli xdsk disc
-  else
-    fail "xdsk: no se encontró carpeta disc/ ni xdsk/"
-    ((ERRORS++))
+# Copia todos los archivos de un directorio (no recursivo) al destino
+copy_bundles() {
+  local src_dir="$1" dst_dir="$2" ext_pat="${3:-*}"
+  if [[ -d "$src_dir" ]]; then
+    for f in "$src_dir"/$ext_pat; do
+      [[ -f "$f" ]] || continue
+      cp "$f" "$dst_dir/"
+      success "$(basename "$f") → $(basename "$dst_dir")/"
+    done
   fi
+}
 
-  # xcdt
-  build_cli xcdt xcdt
+# =============================================================================
+# BUILDS POR TARGET
+# =============================================================================
 
-  # xcart — requiere ROMs
-  XCART_ROMS_OK=true
-  for rom in os.rom basic.rom amsdos.rom; do
-    if [[ ! -f "$ROOT/xcart/roms/$rom" ]]; then
-      XCART_ROMS_OK=false
-      break
+# ─────────────────────────────────────────────────────────────────────────────
+# macOS (host nativo)
+# ─────────────────────────────────────────────────────────────────────────────
+build_macos() {
+  local rust_target="aarch64-apple-darwin"
+  local out="$DIST/macos"
+
+  header "macOS · $rust_target (host)"
+
+  # Instalar target si no existe
+  rustup target add "$rust_target" 2>/dev/null || true
+
+  # ── CLIs ──
+  if [[ "$GUI_ONLY" == false ]]; then
+    for cli in xdsk xcdt xcart; do
+      local src_dir="$ROOT/$cli"
+      [[ -d "$src_dir" ]] || { warn "$cli: directorio no encontrado — omitido"; continue; }
+      info "cargo build $cli (release)"
+      (cd "$src_dir" && cargo build --release --target "$rust_target") || { fail "$cli build fallido"; ((ERRORS++)); continue; }
+      copy_bin "$src_dir/target/$rust_target/release/$cli" "$out/$cli"
+    done
+
+    # Copiar sidecar xdsk al bundle de Tauri
+    if [[ -f "$out/xdsk" ]]; then
+      cp "$out/xdsk" "$GUI_DIR/src-tauri/binaries/xdsk-$rust_target"
+      info "Sidecar xdsk-$rust_target actualizado"
     fi
-  done
-
-  if [[ "$XCART_ROMS_OK" == true ]]; then
-    build_cli xcart xcart
-  else
-    warn "xcart: faltan ROMs en xcart/roms/ (os.rom, basic.rom, amsdos.rom) — omitido"
-    warn "       Copia o enlaza las ROMs y vuelve a ejecutar este script."
   fi
 
-fi
-
-# ── Compilar GUI ──────────────────────────────────────────────────────────────
-if [[ "$CLI_ONLY" == false ]]; then
-
-  header "Compilando xDSK Desktop (Tauri)"
-
-  GUI_DIR=""
-  if [[ -d "$ROOT/xdsk-desktop" ]]; then
-    GUI_DIR="$ROOT/xdsk-desktop"
-  elif [[ -d "$ROOT/disc-desktop" ]]; then
-    GUI_DIR="$ROOT/disc-desktop"
-  else
-    warn "GUI: no se encontró carpeta disc-desktop/ ni xdsk-desktop/ — omitido"
-  fi
-
-  if [[ -n "$GUI_DIR" ]]; then
+  # ── GUI ──
+  if [[ "$CLI_ONLY" == false ]]; then
     if ! command -v npm &>/dev/null; then
-      warn "npm no encontrado — GUI omitido. Instala Node.js: https://nodejs.org"
+      warn "npm no encontrado — GUI omitido"
     else
-      info "npm install"
-      (cd "$GUI_DIR" && npm install --silent)
-
-      info "npm run tauri build"
-      if ! (cd "$GUI_DIR" && npm run tauri build 2>&1); then
-        fail "GUI: build fallido"
-        ((ERRORS++))
+      info "npm ci"
+      (cd "$GUI_DIR" && npm ci --silent)
+      info "tauri build --target $rust_target"
+      if (cd "$GUI_DIR" && npm run tauri build -- --target "$rust_target"); then
+        local bundle_base="$GUI_DIR/src-tauri/target/$rust_target/release/bundle"
+        # .app
+        local app="$bundle_base/macos/xDSK Desktop.app"
+        [[ -d "$app" ]] && { rm -rf "$out/xDSK Desktop.app"; cp -r "$app" "$out/xDSK Desktop.app"; success "xDSK Desktop.app → dist/macos/"; }
+        # .dmg
+        copy_bundles "$bundle_base/dmg" "$out" "*.dmg"
       else
-        # macOS: .app bundle
-        APP_BUNDLE="$GUI_DIR/src-tauri/target/release/bundle/macos/xDSK Desktop.app"
-        if [[ -d "$APP_BUNDLE" ]]; then
-          rm -rf "$DIST/xDSK Desktop.app"
-          cp -r "$APP_BUNDLE" "$DIST/xDSK Desktop.app"
-          success "xDSK Desktop.app → dist/"
-        fi
-
-        # macOS: DMG
-        DMG_DIR="$GUI_DIR/src-tauri/target/release/bundle/dmg"
-        if [[ -d "$DMG_DIR" ]]; then
-          for dmg in "$DMG_DIR"/*.dmg; do
-            [[ -f "$dmg" ]] || continue
-            cp "$dmg" "$DIST/"
-            success "$(basename "$dmg") → dist/"
-          done
-        fi
-
-        # Linux: AppImage / deb
-        APPIMAGE_DIR="$GUI_DIR/src-tauri/target/release/bundle/appimage"
-        if [[ -d "$APPIMAGE_DIR" ]]; then
-          for ai in "$APPIMAGE_DIR"/*.AppImage; do
-            [[ -f "$ai" ]] || continue
-            cp "$ai" "$DIST/"
-            success "$(basename "$ai") → dist/"
-          done
-        fi
-
-        # Windows: NSIS / MSI
-        for win_dir in nsis msi; do
-          WIN_DIR="$GUI_DIR/src-tauri/target/release/bundle/$win_dir"
-          if [[ -d "$WIN_DIR" ]]; then
-            for pkg in "$WIN_DIR"/*; do
-              [[ -f "$pkg" ]] || continue
-              cp "$pkg" "$DIST/"
-              success "$(basename "$pkg") → dist/"
-            done
-          fi
-        done
+        fail "GUI macOS build fallido"; ((ERRORS++))
       fi
     fi
   fi
+}
 
-fi
+# ─────────────────────────────────────────────────────────────────────────────
+# Linux x86_64 (Docker vía cross)
+# ─────────────────────────────────────────────────────────────────────────────
+build_linux() {
+  local rust_target="x86_64-unknown-linux-gnu"
+  local out="$DIST/linux"
 
-# ── Resumen ───────────────────────────────────────────────────────────────────
+  header "Linux · $rust_target (Docker/cross)"
+
+  ensure_cross
+
+  # ── CLIs ──
+  if [[ "$GUI_ONLY" == false ]]; then
+    for cli in xdsk xcdt xcart; do
+      local src_dir="$ROOT/$cli"
+      [[ -d "$src_dir" ]] || { warn "$cli: directorio no encontrado — omitido"; continue; }
+      info "cross build $cli (release) → $rust_target"
+      (cd "$src_dir" && cross build --release --target "$rust_target") || { fail "$cli Linux build fallido"; ((ERRORS++)); continue; }
+      copy_bin "$src_dir/target/$rust_target/release/$cli" "$out/$cli"
+    done
+
+    # Sidecar para Tauri
+    if [[ -f "$out/xdsk" ]]; then
+      cp "$out/xdsk" "$GUI_DIR/src-tauri/binaries/xdsk-$rust_target"
+      info "Sidecar xdsk-$rust_target actualizado"
+    fi
+  fi
+
+  # ── GUI (Tauri en Docker) ──
+  if [[ "$CLI_ONLY" == false ]]; then
+    info "Construyendo xDSK Desktop para Linux en Docker..."
+
+    # Imagen con todas las dependencias de Tauri para Linux
+    local docker_image="ghcr.io/cross-rs/x86_64-unknown-linux-gnu:main"
+
+    # Verificar si tenemos la imagen (o intentar pull)
+    if ! docker image inspect "$docker_image" &>/dev/null; then
+      info "Descargando imagen Docker $docker_image..."
+      docker pull "$docker_image" || { warn "No se pudo descargar la imagen Tauri Linux — GUI Linux omitido"; return; }
+    fi
+
+    # Build con docker run montando el workspace
+    docker run --rm \
+      -v "$ROOT:/workspace" \
+      -w /workspace/xdsk-desktop \
+      -e CARGO_HOME=/workspace/.cargo-cache \
+      "$docker_image" \
+      bash -c "
+        apt-get update -qq &&
+        apt-get install -y -qq curl nodejs npm libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf &&
+        npm ci --silent &&
+        cargo build --release --target $rust_target --manifest-path src-tauri/Cargo.toml 2>&1
+      " || { fail "GUI Linux build fallido"; ((ERRORS++)); return; }
+
+    local bundle_base="$GUI_DIR/src-tauri/target/$rust_target/release/bundle"
+    copy_bundles "$bundle_base/appimage" "$out" "*.AppImage"
+    copy_bundles "$bundle_base/deb"      "$out" "*.deb"
+  fi
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Windows x86_64 (Docker vía cross)
+# ─────────────────────────────────────────────────────────────────────────────
+build_windows() {
+  local rust_target="x86_64-pc-windows-gnu"
+  local out="$DIST/windows"
+
+  header "Windows · $rust_target (Docker/cross)"
+
+  ensure_cross
+
+  # ── CLIs ──
+  if [[ "$GUI_ONLY" == false ]]; then
+    for cli in xdsk xcdt xcart; do
+      local src_dir="$ROOT/$cli"
+      [[ -d "$src_dir" ]] || { warn "$cli: directorio no encontrado — omitido"; continue; }
+      info "cross build $cli (release) → $rust_target"
+      (cd "$src_dir" && cross build --release --target "$rust_target") || { fail "$cli Windows build fallido"; ((ERRORS++)); continue; }
+      copy_bin "$src_dir/target/$rust_target/release/$cli.exe" "$out/$cli.exe"
+    done
+
+    if [[ -f "$out/xdsk.exe" ]]; then
+      cp "$out/xdsk.exe" "$GUI_DIR/src-tauri/binaries/xdsk-$rust_target.exe"
+      info "Sidecar xdsk-$rust_target.exe actualizado"
+    fi
+  fi
+
+  # ── GUI Tauri Windows ──
+  # Nota: Tauri en Windows requiere MSVC (no disponible en cross).
+  # Para el GUI Windows se recomienda usar GitHub Actions (release.yml).
+  if [[ "$CLI_ONLY" == false ]]; then
+    warn "GUI Windows: Tauri requiere MSVC — no compilable en macOS/Linux."
+    warn "Usa 'git tag vX.Y.Z && git push origin vX.Y.Z' para generar el instalador Windows via GitHub Actions."
+  fi
+}
+
+# =============================================================================
+# EJECUTAR TARGETS SELECCIONADOS
+# =============================================================================
+
+for target in "${TARGETS[@]}"; do
+  case "$target" in
+    macos)   build_macos   ;;
+    linux)   build_linux   ;;
+    windows) build_windows ;;
+    *)       fail "Target desconocido: $target (usa: macos, linux, windows)"; ((ERRORS++)) ;;
+  esac
+done
+
+# =============================================================================
+# RESUMEN
+# =============================================================================
 header "Resumen del Build"
 echo ""
-printf "  %-12s %s\n" "Target:"  "$TARGET"
-printf "  %-12s %s\n" "Perfil:"  "$PROFILE"
-printf "  %-12s %s\n" "Salida:"  "$DIST"
+printf "  %-14s %s\n" "Targets:"  "${TARGETS[*]}"
+printf "  %-14s %s\n" "Perfil:"   "release"
+printf "  %-14s %s\n" "Salida:"   "$DIST"
 echo ""
 
-if [[ -d "$DIST" ]]; then
+for platform_dir in "$DIST"/*/; do
+  [[ -d "$platform_dir" ]] || continue
+  platform="$(basename "$platform_dir")"
+  echo -e "  ${BOLD}$platform/${RESET}"
   found=false
-  for f in "$DIST"/*; do
+  for f in "$platform_dir"*; do
     [[ -e "$f" ]] || continue
     found=true
     if [[ -d "$f" ]]; then
-      printf "  %-30s %s\n" "$(basename "$f")/" "(bundle)"
+      printf "    %-32s %s\n" "$(basename "$f")/" "(bundle)"
     else
-      printf "  %-30s %s\n" "$(basename "$f")" "($(du -sh "$f" | cut -f1))"
+      printf "    %-32s %s\n" "$(basename "$f")" "($(du -sh "$f" | cut -f1))"
     fi
   done
-  if [[ "$found" == false ]]; then
-    echo "  (sin artefactos)"
-  fi
-fi
+  [[ "$found" == false ]] && echo "    (sin artefactos)"
+  echo ""
+done
 
-echo ""
 if [[ "$ERRORS" -eq 0 ]]; then
   success "Build completado sin errores."
 else
