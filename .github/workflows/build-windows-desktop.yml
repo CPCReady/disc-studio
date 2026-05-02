@@ -1,0 +1,76 @@
+name: Build · Windows Desktop
+
+# Compila xdsk-desktop para Windows (MSVC) y sube el instalador como artefacto.
+# Solo ejecutable en Windows — no se puede hacer desde macOS/Linux.
+
+on:
+  workflow_dispatch:   # ejecución manual desde GitHub Actions
+
+jobs:
+  build-windows:
+    name: xdsk-desktop · Windows x86_64
+    runs-on: windows-latest
+
+    steps:
+      # ── Checkout ────────────────────────────────────────────────────────────
+      - uses: actions/checkout@v4
+
+      # ── Node.js ─────────────────────────────────────────────────────────────
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: xdsk-desktop/package-lock.json
+
+      # ── Rust + target MSVC ──────────────────────────────────────────────────
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            xdsk -> target
+            xdsk-desktop/src-tauri -> target
+
+      # ── Compilar xdsk CLI y copiar como sidecar ──────────────────────────────
+      - name: Build xdsk CLI (sidecar)
+        working-directory: xdsk
+        run: cargo build --release --target x86_64-pc-windows-msvc
+
+      - name: Copy xdsk sidecar
+        run: |
+          copy xdsk\target\x86_64-pc-windows-msvc\release\xdsk.exe `
+               xdsk-desktop\src-tauri\binaries\xdsk-x86_64-pc-windows-msvc.exe
+
+      # ── npm install ──────────────────────────────────────────────────────────
+      - name: npm ci
+        working-directory: xdsk-desktop
+        run: npm ci
+
+      # ── Tauri build ──────────────────────────────────────────────────────────
+      - name: Build xdsk-desktop (Tauri)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: xdsk-desktop
+          args: --target x86_64-pc-windows-msvc
+
+      # ── Subir artefactos ─────────────────────────────────────────────────────
+      - name: Upload installer (.msi)
+        uses: actions/upload-artifact@v4
+        with:
+          name: xdsk-desktop-windows-msi
+          path: xdsk-desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+          retention-days: 30
+
+      - name: Upload installer (.exe NSIS)
+        uses: actions/upload-artifact@v4
+        with:
+          name: xdsk-desktop-windows-exe
+          path: xdsk-desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+          retention-days: 30
