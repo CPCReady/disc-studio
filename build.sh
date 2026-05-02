@@ -296,10 +296,39 @@ build_windows() {
     fi
   fi
 
-  # ── GUI Tauri Windows ──
+  # ── GUI Tauri Windows (NSIS .exe via Docker + mingw-w64 + NSIS) ──
   if [[ "$CLI_ONLY" == false ]]; then
-    warn "GUI Windows: Tauri requiere MSVC — no compilable en macOS/Linux."
-    warn "Usa 'git tag vX.Y.Z && git push origin vX.Y.Z' para el instalador Windows via GitHub Actions."
+    info "Construyendo xdsk-desktop para Windows (NSIS .exe) en Docker..."
+    info "Primera ejecución: instala rustup + NSIS dentro del contenedor (~5 min)"
+
+    docker run --rm \
+      --platform linux/amd64 \
+      -v "$ROOT:/workspace" \
+      -v "xdsk-cargo-cache:/usr/local/cargo/registry" \
+      -w /workspace \
+      node:20-slim \
+      bash -c "
+        set -e
+        apt-get update -qq
+        apt-get install -y -qq curl gcc-mingw-w64-x86-64 nsis
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal --no-modify-path
+        export PATH=\"/root/.cargo/bin:\$PATH\"
+        rustup target add x86_64-pc-windows-gnu
+
+        # Sidecar xdsk para Tauri
+        cd /workspace/xdsk
+        cargo build --release --target x86_64-pc-windows-gnu
+        cp target/x86_64-pc-windows-gnu/release/xdsk.exe /workspace/xdsk-desktop/src-tauri/binaries/xdsk-x86_64-pc-windows-gnu.exe
+
+        # GUI xdsk-desktop
+        cd /workspace/xdsk-desktop
+        npm ci --silent
+        npm run tauri build -- --target x86_64-pc-windows-gnu --bundles nsis
+      " || { fail "GUI Windows (NSIS) build fallido"; ((ERRORS++)); return; }
+
+    local nsis_dir="$GUI_DIR/src-tauri/target/$rust_target/release/bundle/nsis"
+    copy_bundles "$nsis_dir" "$out" "*.exe"
+    success "Instalador Windows NSIS generado en dist/windows/"
   fi
 }
 
