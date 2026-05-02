@@ -96,11 +96,8 @@ fi
 
 ERRORS=0
 
-# ── Limpiar dist ──────────────────────────────────────────────────────────────
-header "Limpiando dist/"
-rm -rf "$DIST"
+# ── Preparar dist ─────────────────────────────────────────────────────────────
 mkdir -p "$DIST"/{macos,linux,windows}
-success "dist/ limpiado y recreado"
 
 # =============================================================================
 # HELPERS
@@ -275,22 +272,13 @@ build_windows() {
     return
   fi
 
-  # ── CLIs ──
+  # ── CLI: solo xdsk ──
   if [[ "$GUI_ONLY" == false ]]; then
-    for cli in xdsk xcdt xcart; do
-      local src_dir="$ROOT/$cli"
-      [[ -d "$src_dir" ]] || { warn "$cli: directorio no encontrado — omitido"; continue; }
-      if [[ "$cli" == xcart ]]; then
-        local missing_roms=false
-        for rom in os.rom basic.rom amsdos.rom; do
-          [[ -f "$src_dir/roms/$rom" ]] || { missing_roms=true; break; }
-        done
-        if [[ "$missing_roms" == true ]]; then
-          warn "xcart: faltan ROMs en xcart/roms/ (os.rom, basic.rom, amsdos.rom) — omitido"
-          continue
-        fi
-      fi
-      info "docker build $cli → windows/amd64 (mingw-w64)"
+    local src_dir="$ROOT/xdsk"
+    if [[ ! -d "$src_dir" ]]; then
+      warn "xdsk: directorio no encontrado — omitido"
+    else
+      info "docker build xdsk → windows/amd64 (mingw-w64)"
       docker run --rm \
         -v "$src_dir:/project" \
         -v "xdsk-cargo-cache:/usr/local/cargo/registry" \
@@ -299,13 +287,12 @@ build_windows() {
         bash -c "apt-get update -qq && \
           apt-get install -y -qq gcc-mingw-w64-x86-64 && \
           rustup target add x86_64-pc-windows-gnu && \
-          cargo build --release --target x86_64-pc-windows-gnu" || { fail "$cli Windows build fallido"; ((ERRORS++)); continue; }
-      copy_bin "$src_dir/target/$rust_target/release/$cli.exe" "$out/$cli.exe"
-    done
-
-    if [[ -f "$out/xdsk.exe" ]]; then
-      cp "$out/xdsk.exe" "$GUI_DIR/src-tauri/binaries/xdsk-$rust_target.exe"
-      info "Sidecar xdsk-$rust_target.exe actualizado"
+          cargo build --release --target x86_64-pc-windows-gnu" || { fail "xdsk Windows build fallido"; ((ERRORS++)); }
+      copy_bin "$src_dir/target/$rust_target/release/xdsk.exe" "$out/xdsk.exe"
+      if [[ -f "$out/xdsk.exe" ]]; then
+        cp "$out/xdsk.exe" "$GUI_DIR/src-tauri/binaries/xdsk-$rust_target.exe"
+        info "Sidecar xdsk-$rust_target.exe actualizado"
+      fi
     fi
   fi
 
