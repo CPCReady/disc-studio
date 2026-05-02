@@ -208,15 +208,18 @@ build_macos() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Linux x86_64 (Docker vía cross)
+# Linux x86_64 (Docker linux/amd64 — imagen oficial rust:slim)
 # ─────────────────────────────────────────────────────────────────────────────
 build_linux() {
   local rust_target="x86_64-unknown-linux-gnu"
   local out="$DIST/linux"
 
-  header "Linux · $rust_target (Docker/cross)"
+  header "Linux · $rust_target (Docker linux/amd64)"
 
-  ensure_cross
+  if ! command -v docker &>/dev/null || ! docker info &>/dev/null 2>&1; then
+    warn "Docker no disponible — target linux omitido"
+    return
+  fi
 
   # ── CLIs ──
   if [[ "$GUI_ONLY" == false ]]; then
@@ -233,9 +236,15 @@ build_linux() {
           continue
         fi
       fi
-      info "cross build $cli (release) → $rust_target"
-      (cd "$src_dir" && CROSS_CUSTOM_TOOLCHAIN=1 cross build --release --target "$rust_target") || { fail "$cli Linux build fallido"; ((ERRORS++)); continue; }
-      copy_bin "$src_dir/target/$rust_target/release/$cli" "$out/$cli"
+      info "docker build $cli → linux/amd64"
+      docker run --rm \
+        --platform linux/amd64 \
+        -v "$src_dir:/project" \
+        -v "xdsk-cargo-cache:/usr/local/cargo/registry" \
+        -w /project \
+        rust:slim \
+        cargo build --release || { fail "$cli Linux build fallido"; ((ERRORS++)); continue; }
+      copy_bin "$src_dir/target/release/$cli" "$out/$cli"
     done
 
     # Sidecar para Tauri
@@ -245,48 +254,26 @@ build_linux() {
     fi
   fi
 
-  # ── GUI (Tauri en Docker) ──
+  # ── GUI Linux ──
   if [[ "$CLI_ONLY" == false ]]; then
-    info "Construyendo xDSK Desktop para Linux en Docker..."
-
-    # Imagen con todas las dependencias de Tauri para Linux
-    local docker_image="ghcr.io/cross-rs/x86_64-unknown-linux-gnu:main"
-
-    # Verificar si tenemos la imagen (o intentar pull)
-    if ! docker image inspect "$docker_image" &>/dev/null; then
-      info "Descargando imagen Docker $docker_image..."
-      docker pull "$docker_image" || { warn "No se pudo descargar la imagen Tauri Linux — GUI Linux omitido"; return; }
-    fi
-
-    # Build con docker run montando el workspace
-    docker run --rm \
-      -v "$ROOT:/workspace" \
-      -w /workspace/xdsk-desktop \
-      -e CARGO_HOME=/workspace/.cargo-cache \
-      "$docker_image" \
-      bash -c "
-        apt-get update -qq &&
-        apt-get install -y -qq curl nodejs npm libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf &&
-        npm ci --silent &&
-        cargo build --release --target $rust_target --manifest-path src-tauri/Cargo.toml 2>&1
-      " || { fail "GUI Linux build fallido"; ((ERRORS++)); return; }
-
-    local bundle_base="$GUI_DIR/src-tauri/target/$rust_target/release/bundle"
-    copy_bundles "$bundle_base/appimage" "$out" "*.AppImage"
-    copy_bundles "$bundle_base/deb"      "$out" "*.deb"
+    warn "GUI Linux: build local no soportado (requiere WebKit2GTK)."
+    warn "Usa 'git tag vX.Y.Z && git push origin vX.Y.Z' para el bundle Linux via GitHub Actions."
   fi
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Windows x86_64 (Docker vía cross)
+# Windows x86_64 (Docker + mingw-w64 — imagen oficial rust:slim)
 # ─────────────────────────────────────────────────────────────────────────────
 build_windows() {
   local rust_target="x86_64-pc-windows-gnu"
   local out="$DIST/windows"
 
-  header "Windows · $rust_target (Docker/cross)"
+  header "Windows · $rust_target (Docker mingw-w64)"
 
-  ensure_cross
+  if ! command -v docker &>/dev/null || ! docker info &>/dev/null 2>&1; then
+    warn "Docker no disponible — target windows omitido"
+    return
+  fi
 
   # ── CLIs ──
   if [[ "$GUI_ONLY" == false ]]; then
@@ -303,8 +290,16 @@ build_windows() {
           continue
         fi
       fi
-      info "cross build $cli (release) → $rust_target"
-      (cd "$src_dir" && CROSS_CUSTOM_TOOLCHAIN=1 cross build --release --target "$rust_target") || { fail "$cli Windows build fallido"; ((ERRORS++)); continue; }
+      info "docker build $cli → windows/amd64 (mingw-w64)"
+      docker run --rm \
+        -v "$src_dir:/project" \
+        -v "xdsk-cargo-cache:/usr/local/cargo/registry" \
+        -w /project \
+        rust:slim \
+        bash -c "apt-get update -qq && \
+          apt-get install -y -qq gcc-mingw-w64-x86-64 && \
+          rustup target add x86_64-pc-windows-gnu && \
+          cargo build --release --target x86_64-pc-windows-gnu" || { fail "$cli Windows build fallido"; ((ERRORS++)); continue; }
       copy_bin "$src_dir/target/$rust_target/release/$cli.exe" "$out/$cli.exe"
     done
 
@@ -315,11 +310,9 @@ build_windows() {
   fi
 
   # ── GUI Tauri Windows ──
-  # Nota: Tauri en Windows requiere MSVC (no disponible en cross).
-  # Para el GUI Windows se recomienda usar GitHub Actions (release.yml).
   if [[ "$CLI_ONLY" == false ]]; then
     warn "GUI Windows: Tauri requiere MSVC — no compilable en macOS/Linux."
-    warn "Usa 'git tag vX.Y.Z && git push origin vX.Y.Z' para generar el instalador Windows via GitHub Actions."
+    warn "Usa 'git tag vX.Y.Z && git push origin vX.Y.Z' para el instalador Windows via GitHub Actions."
   fi
 }
 
