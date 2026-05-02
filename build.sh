@@ -159,6 +159,17 @@ build_macos() {
     for cli in xdsk xcdt xcart; do
       local src_dir="$ROOT/$cli"
       [[ -d "$src_dir" ]] || { warn "$cli: directorio no encontrado — omitido"; continue; }
+      # xcart requiere ROMs embebidas en compilación
+      if [[ "$cli" == xcart ]]; then
+        local missing_roms=false
+        for rom in os.rom basic.rom amsdos.rom; do
+          [[ -f "$src_dir/roms/$rom" ]] || { missing_roms=true; break; }
+        done
+        if [[ "$missing_roms" == true ]]; then
+          warn "xcart: faltan ROMs en xcart/roms/ (os.rom, basic.rom, amsdos.rom) — omitido"
+          continue
+        fi
+      fi
       info "cargo build $cli (release)"
       (cd "$src_dir" && cargo build --release --target "$rust_target") || { fail "$cli build fallido"; ((ERRORS++)); continue; }
       copy_bin "$src_dir/target/$rust_target/release/$cli" "$out/$cli"
@@ -209,6 +220,16 @@ build_linux() {
     for cli in xdsk xcdt xcart; do
       local src_dir="$ROOT/$cli"
       [[ -d "$src_dir" ]] || { warn "$cli: directorio no encontrado — omitido"; continue; }
+      if [[ "$cli" == xcart ]]; then
+        local missing_roms=false
+        for rom in os.rom basic.rom amsdos.rom; do
+          [[ -f "$src_dir/roms/$rom" ]] || { missing_roms=true; break; }
+        done
+        if [[ "$missing_roms" == true ]]; then
+          warn "xcart: faltan ROMs en xcart/roms/ (os.rom, basic.rom, amsdos.rom) — omitido"
+          continue
+        fi
+      fi
       info "cross build $cli (release) → $rust_target"
       (cd "$src_dir" && cross build --release --target "$rust_target") || { fail "$cli Linux build fallido"; ((ERRORS++)); continue; }
       copy_bin "$src_dir/target/$rust_target/release/$cli" "$out/$cli"
@@ -269,6 +290,16 @@ build_windows() {
     for cli in xdsk xcdt xcart; do
       local src_dir="$ROOT/$cli"
       [[ -d "$src_dir" ]] || { warn "$cli: directorio no encontrado — omitido"; continue; }
+      if [[ "$cli" == xcart ]]; then
+        local missing_roms=false
+        for rom in os.rom basic.rom amsdos.rom; do
+          [[ -f "$src_dir/roms/$rom" ]] || { missing_roms=true; break; }
+        done
+        if [[ "$missing_roms" == true ]]; then
+          warn "xcart: faltan ROMs en xcart/roms/ (os.rom, basic.rom, amsdos.rom) — omitido"
+          continue
+        fi
+      fi
       info "cross build $cli (release) → $rust_target"
       (cd "$src_dir" && cross build --release --target "$rust_target") || { fail "$cli Windows build fallido"; ((ERRORS++)); continue; }
       copy_bin "$src_dir/target/$rust_target/release/$cli.exe" "$out/$cli.exe"
