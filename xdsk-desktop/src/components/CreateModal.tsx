@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { FilePlus2, FolderOpen } from 'lucide-react';
 import { Modal } from './Modal';
 import { TextInput } from './TextInput';
+import { Select } from './Select';
 import { Button } from './Button';
 import { Checkbox } from './Checkbox';
 import { useDiscCommand } from '../hooks/useDiscCommand';
@@ -16,6 +17,9 @@ interface Props {
   open: boolean;
   onClose: () => void;
 }
+
+const TRACKS_OPTIONS = [{ value: '40', label: '40' }];
+const SECTORS_OPTIONS = [{ value: '9', label: '9' }];
 
 export function CreateModal({ open, onClose }: Props) {
   const { t } = useI18n();
@@ -92,19 +96,17 @@ export function CreateModal({ open, onClose }: Props) {
         </div>
 
         <div className={styles.numbersRow}>
-          <TextInput
+          <Select
             label={t('create_tracks')}
             value={tracks}
             onChange={setTracks}
-            type="number"
-            hint={t('create_tracks_hint')}
+            options={TRACKS_OPTIONS}
           />
-          <TextInput
+          <Select
             label={t('create_sectors')}
             value={sectors}
             onChange={setSectors}
-            type="number"
-            hint={t('create_sectors_hint')}
+            options={SECTORS_OPTIONS}
           />
         </div>
 

@@ -32,7 +32,14 @@ export function CheckPanel() {
     if (r) setResult(parseCheck(r.stdout + r.stderr));
   }, [activeDisk, execute]);
 
-  // Auto-run when triggered from toolbar button
+  // Auto-run when the active disk changes (tab switch or new tab)
+  useEffect(() => {
+    setResult(null);
+    handleCheck();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDiskId]);
+
+  // Also run when triggered manually from the toolbar button
   useEffect(() => {
     if (checkTrigger > 0) handleCheck();
   // eslint-disable-next-line react-hooks/exhaustive-deps

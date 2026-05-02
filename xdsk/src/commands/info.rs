@@ -42,7 +42,6 @@ pub fn execute(image: &PathBuf) -> Result<()> {
     // ── Header ────────────────────────────────────────────────────────────────
     println!("DSK Image: {}", image.display());
     println!("{}", "\u{2501}".repeat(40));
-    println!();
     println!("  {:<16} {}", "Format", format_name);
     println!("  {:<16} {}", "Tracks", header.tracks);
     println!("  {:<16} {}", "Sectors/Track", sectors_pt);
@@ -50,7 +49,6 @@ pub fn execute(image: &PathBuf) -> Result<()> {
     println!("  {:<16} {} KB", "Capacity", total_blocks);
 
     // ── Directory ─────────────────────────────────────────────────────────────
-    println!();
     println!("Directory");
     println!(
         "  {:<16} {} / {}",
@@ -67,7 +65,6 @@ pub fn execute(image: &PathBuf) -> Result<()> {
     };
     let free_pct = 100.0_f64 - used_pct;
 
-    println!();
     println!("Block Map");
     println!("  {:<16} {}", "Total blocks", total_blocks);
     println!("  {:<16} {}  ({:.1}%)", "Used", used_blocks, used_pct);
@@ -75,7 +72,6 @@ pub fn execute(image: &PathBuf) -> Result<()> {
 
     // ── File listing ──────────────────────────────────────────────────────────
     if !catalog.entries.is_empty() {
-        println!();
         println!("Files");
         println!("  {:<14} {:<10} {:<10} Attr", "Name", "Type", "Size");
         println!("  {}", "\u{2500}".repeat(46));
@@ -104,8 +100,6 @@ pub fn execute(image: &PathBuf) -> Result<()> {
             );
         }
     }
-
-    println!();
     Ok(())
 }
 

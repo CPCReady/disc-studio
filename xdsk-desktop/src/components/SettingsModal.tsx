@@ -4,7 +4,7 @@ import { useI18n } from '../i18n/useI18n';
 import { Modal } from './Modal';
 import { Select } from './Select';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { useSettingsStore, type FontSize } from '../store/settingsStore';
+import { useSettingsStore, type FontSize, type FontFamily } from '../store/settingsStore';
 import type { Language } from '../i18n/index';
 import styles from './SettingsModal.module.css';
 
@@ -20,15 +20,25 @@ const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
   { value: 'fr', label: 'Français' },
 ];
 
-const FONT_SIZE_OPTIONS: { value: FontSize; labelKey: 'settings_font_size_sm' | 'settings_font_size_md' | 'settings_font_size_lg' }[] = [
-  { value: 'sm', labelKey: 'settings_font_size_sm' },
-  { value: 'md', labelKey: 'settings_font_size_md' },
-  { value: 'lg', labelKey: 'settings_font_size_lg' },
+const FONT_SIZE_OPTIONS: { value: FontSize; label: string }[] = [
+  { value: '11', label: '11 px' },
+  { value: '12', label: '12 px' },
+  { value: '13', label: '13 px' },
+  { value: '14', label: '14 px' },
+  { value: '15', label: '15 px' },
+];
+
+const FONT_FAMILY_OPTIONS: { value: FontFamily; label: string }[] = [
+  { value: 'ibm-plex', label: 'IBM Plex Sans' },
+  { value: 'manrope',  label: 'Manrope' },
+  { value: 'inter',    label: 'Inter' },
+  { value: 'nunito',   label: 'Nunito Sans' },
+  { value: 'system',   label: 'System UI' },
 ];
 
 export function SettingsModal({ isOpen, onClose }: Props) {
   const { t, language, setLanguage } = useI18n();
-  const { emulatorPath, setEmulatorPath, fontSize, setFontSize } = useSettingsStore();
+  const { emulatorPath, setEmulatorPath, fontSize, setFontSize, fontFamily, setFontFamily } = useSettingsStore();
 
   const handleBrowseEmulator = async () => {
     const selected = await openDialog({ multiple: false, directory: false });
@@ -36,8 +46,6 @@ export function SettingsModal({ isOpen, onClose }: Props) {
       setEmulatorPath(selected);
     }
   };
-
-  const fontSizeOptions = FONT_SIZE_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }));
 
   return (
     <Modal
@@ -60,6 +68,19 @@ export function SettingsModal({ isOpen, onClose }: Props) {
           />
         </div>
 
+        {/* Font family */}
+        <div className={styles.row}>
+          <div className={styles.rowInfo}>
+            <label className={styles.label}>{t('settings_font_family')}</label>
+            <span className={styles.desc}>{t('settings_font_family_desc')}</span>
+          </div>
+          <Select
+            value={fontFamily}
+            onChange={(v) => setFontFamily(v as FontFamily)}
+            options={FONT_FAMILY_OPTIONS}
+          />
+        </div>
+
         {/* Font size */}
         <div className={styles.row}>
           <div className={styles.rowInfo}>
@@ -69,7 +90,7 @@ export function SettingsModal({ isOpen, onClose }: Props) {
           <Select
             value={fontSize}
             onChange={(v) => setFontSize(v as FontSize)}
-            options={fontSizeOptions}
+            options={FONT_SIZE_OPTIONS}
           />
         </div>
 

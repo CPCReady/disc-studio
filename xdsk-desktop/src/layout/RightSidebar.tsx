@@ -5,12 +5,12 @@ import { Save } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { useDiscCommand } from '../hooks/useDiscCommand';
 import { useI18n } from '../i18n/useI18n';
+import { useSettingsStore } from '../store/settingsStore';
 import { CheckPanel } from '../panels/CheckPanel';
 import styles from './RightSidebar.module.css';
 
 const MIN_WIDTH = 160;
 const MAX_WIDTH = 480;
-const DEFAULT_WIDTH = 220;
 
 interface InfoRow { label: string; value: string }
 interface InfoData {
@@ -45,20 +45,25 @@ export function RightSidebar() {
   const { activeDiskId, openDisks } = useAppStore();
   const { execute } = useDiscCommand();
   const { t } = useI18n();
+  const { rightSidebarWidth, setRightSidebarWidth } = useSettingsStore();
   const [info, setInfo] = useState<InfoData | null>(null);
-  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [width, setWidth] = useState(rightSidebarWidth);
+  const currentWidth = useRef(rightSidebarWidth);
   const dragStart = useRef<{ x: number; w: number } | null>(null);
 
   const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    dragStart.current = { x: e.clientX, w: width };
+    dragStart.current = { x: e.clientX, w: currentWidth.current };
     document.body.style.cursor = 'ew-resize';
     const onMove = (ev: MouseEvent) => {
       if (!dragStart.current) return;
       const delta = dragStart.current.x - ev.clientX;
-      setWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, dragStart.current.w + delta)));
+      const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, dragStart.current.w + delta));
+      currentWidth.current = next;
+      setWidth(next);
     };
     const onUp = () => {
+      setRightSidebarWidth(currentWidth.current);
       dragStart.current = null;
       document.body.style.cursor = '';
       window.removeEventListener('mousemove', onMove);
@@ -66,7 +71,7 @@ export function RightSidebar() {
     };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
-  }, [width]);
+  }, [setRightSidebarWidth]);
 
   const activeDisk = openDisks.find((d) => d.id === activeDiskId);
 
