@@ -58,9 +58,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: xdsk-desktop
-          args: --target x86_64-pc-windows-msvc --bundles nsis
+          args: --target x86_64-pc-windows-msvc
 
-      # ── Subir artefacto ──────────────────────────────────────────────────────
+      # ── Subir artefactos ─────────────────────────────────────────────────────
+      - name: Upload installer (.msi)
+        uses: actions/upload-artifact@v4
+        with:
+          name: xdsk-desktop-windows-msi
+          path: xdsk-desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+          retention-days: 30
+
       - name: Upload installer (.exe NSIS)
         uses: actions/upload-artifact@v4
         with:
