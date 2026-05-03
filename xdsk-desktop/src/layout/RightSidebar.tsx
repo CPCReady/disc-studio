@@ -42,7 +42,7 @@ function parseInfo(raw: string): InfoData {
 }
 
 export function RightSidebar() {
-  const { activeDiskId, openDisks } = useAppStore();
+  const { activeDiskId, openDisks, diskHealth, triggerCheck } = useAppStore();
   const { execute } = useDiscCommand();
   const { t } = useI18n();
   const { rightSidebarWidth, setRightSidebarWidth } = useSettingsStore();
@@ -74,6 +74,14 @@ export function RightSidebar() {
   }, [setRightSidebarWidth]);
 
   const activeDisk = openDisks.find((d) => d.id === activeDiskId);
+  const health = activeDisk ? diskHealth[activeDisk.id] : null;
+
+  const formatCheckedAt = (iso: string | null) => {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleTimeString();
+  };
 
   const refresh = useCallback(async () => {
     if (!activeDisk) { setInfo(null); return; }
@@ -107,25 +115,53 @@ export function RightSidebar() {
         ) : !info ? (
           <div className={styles.empty}><p>{t('loading')}</p></div>
         ) : (
-          sections.map(({ title, key }) => {
-            const rows = info[key];
-            if (rows.length === 0) return null;
-            return (
-              <section key={key} className={styles.section}>
-                <span className={styles.sectionTitle}>{title}</span>
-                <table className={styles.table}>
-                  <tbody>
-                    {rows.map(({ label, value }) => (
-                      <tr key={label}>
-                        <td className={styles.key}>{label}</td>
-                        <td className={styles.val}>{value}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </section>
-            );
-          })
+          <>
+            <section className={styles.section}>
+              <span className={styles.sectionTitle}>{t('right_health')}</span>
+              <div className={styles.healthCard}>
+                <div className={styles.healthTop}>
+                  <span className={styles.key}>{t('right_health_state')}</span>
+                  <span className={`${styles.healthBadge} ${styles[`health_${health?.level ?? 'unknown'}`]}`}>
+                    {health?.level === 'ok'
+                      ? t('right_health_ok')
+                      : health?.level === 'warning'
+                        ? t('right_health_warning')
+                        : health?.level === 'error'
+                          ? t('right_health_error')
+                          : t('right_health_unknown')}
+                  </span>
+                </div>
+                <div className={styles.healthMeta}>
+                  <span>{t('right_health_errors')}: {health?.errors ?? 0}</span>
+                  <span>{t('right_health_warnings')}: {health?.warnings ?? 0}</span>
+                  <span>{t('right_health_checked')}: {formatCheckedAt(health?.checkedAt ?? null)}</span>
+                </div>
+                <button className={styles.healthActionBtn} onClick={triggerCheck}>
+                  {t('right_health_run_check')}
+                </button>
+              </div>
+            </section>
+
+            {sections.map(({ title, key }) => {
+              const rows = info[key];
+              if (rows.length === 0) return null;
+              return (
+                <section key={key} className={styles.section}>
+                  <span className={styles.sectionTitle}>{title}</span>
+                  <table className={styles.table}>
+                    <tbody>
+                      {rows.map(({ label, value }) => (
+                        <tr key={label}>
+                          <td className={styles.key}>{label}</td>
+                          <td className={styles.val}>{value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </section>
+              );
+            })}
+          </>
         )}
       </div>
 

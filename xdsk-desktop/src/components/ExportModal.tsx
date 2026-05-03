@@ -2,6 +2,7 @@
 // Copyright (c) Destroyer 2026.
 import { useState } from 'react';
 import { FolderOpen } from 'lucide-react';
+import { message } from '@tauri-apps/plugin-dialog';
 import { Modal } from './Modal';
 import { TextInput } from './TextInput';
 import { Button } from './Button';
@@ -32,12 +33,19 @@ export function ExportModal({ open, diskPath, files, onClose, onDone }: Props) {
 
   const handleExport = async () => {
     if (!outputDir) return;
+    let failures = 0;
     for (const fileName of files) {
       const args = ['export', diskPath, fileName, '--output', outputDir];
       if (stripHeader) args.push('--strip-header');
-      await execute(args);
+      const result = await execute(args);
+      if (!result?.success) failures += 1;
     }
-    onDone();
+    if (failures === 0) {
+      await message(t('export_done_ok'), { title: t('success'), kind: 'info' });
+      onDone();
+      return;
+    }
+    await message(`${t('export_done_fail')} (${failures}/${files.length})`, { title: t('error'), kind: 'error' });
   };
 
   return (

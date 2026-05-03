@@ -23,7 +23,7 @@
 }
 
 .resizeHandle:hover {
-  background: var(--accent-blue, rgba(99, 158, 255, 0.35));
+  background: color-mix(in srgb, var(--border-strong) 78%, #000 22%);
 }
 
 .header {
@@ -38,7 +38,7 @@
 .title {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
-  color: var(--text-secondary);
+  color: var(--text-muted);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -70,11 +70,85 @@
   padding: var(--space-2) var(--space-3) var(--space-3);
 }
 
+.healthCard {
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.healthTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.healthBadge {
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  letter-spacing: 0.03em;
+}
+
+.health_ok {
+  color: var(--accent-green);
+  border-color: color-mix(in srgb, var(--accent-green) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent-green-muted) 60%, transparent);
+}
+
+.health_warning {
+  color: var(--accent-amber);
+  border-color: color-mix(in srgb, var(--accent-amber) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent-amber-muted) 60%, transparent);
+}
+
+.health_error {
+  color: var(--accent-red);
+  border-color: color-mix(in srgb, var(--accent-red) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent-red-muted) 60%, transparent);
+}
+
+.health_unknown {
+  color: var(--text-secondary);
+}
+
+.healthMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.healthActionBtn {
+  align-self: flex-start;
+  font-size: 10px;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--bg-surface);
+  padding: 2px 8px;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.healthActionBtn:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
 .sectionTitle {
   display: block;
   font-size: 10px;
   font-weight: var(--font-weight-semibold);
-  color: var(--text-secondary);
+  color: var(--text-muted);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   margin-bottom: var(--space-2);

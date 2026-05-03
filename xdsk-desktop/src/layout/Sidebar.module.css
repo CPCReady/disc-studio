@@ -8,6 +8,22 @@
   border-right: 1px solid var(--border-subtle);
   overflow: hidden;
   user-select: none;
+  position: relative;
+}
+
+.resizeHandle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  cursor: ew-resize;
+  z-index: 10;
+  transition: background var(--transition-fast);
+}
+
+.resizeHandle:hover {
+  background: color-mix(in srgb, var(--border-strong) 78%, #000 22%);
 }
 
 /* Header */
@@ -29,12 +45,40 @@
   text-transform: uppercase;
 }
 
-.appTitle {
+.appBrand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
+  user-select: none;
+  position: relative;
+  padding-bottom: 2px;
+  margin-left: var(--space-2);
+}
+
+.appBrand::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: color-mix(in srgb, var(--border-strong) 74%, #000 26%);
+  opacity: 0.8;
+}
+
+.brandAccent {
+  font-size: var(--font-size-md);
+  font-weight: 800;
+  color: #f5d90a;
+}
+
+.brandName {
   font-family: var(--font-sans);
   font-size: var(--font-size-md);
-  font-weight: var(--font-weight-bold);
+  font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.01em;
 }
 
 .addBtn {
@@ -57,8 +101,11 @@
 .diskList {
   flex: 1;
   overflow-y: auto;
-  padding: var(--space-2) 0;
+  padding: var(--space-2) var(--space-3);
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .empty {
@@ -90,16 +137,21 @@
 .diskItem {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
-  height: 28px;
+  padding: 4px var(--space-2);
+  min-height: 30px;
   cursor: pointer;
   position: relative;
-  transition: background var(--transition-fast);
+  transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-sidebar);
 }
 
 .diskItem:hover {
   background: var(--bg-hover);
+  border-color: var(--border-strong);
 }
 
 .diskItem:hover .closeBtn {
@@ -108,42 +160,81 @@
 
 .diskItem.active {
   background: var(--bg-active);
+  border-color: color-mix(in srgb, var(--border-strong) 82%, #000 18%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--border-strong) 70%, #000 30%);
 }
 
 .diskItem.active::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 4px;
-  bottom: 4px;
+  top: 7px;
+  bottom: 7px;
   width: 2px;
-  background: var(--accent-blue);
+  background: color-mix(in srgb, var(--border-strong) 80%, #000 20%);
   border-radius: 0 2px 2px 0;
+}
+
+.diskCardContent {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
 }
 
 .diskIcon {
   flex-shrink: 0;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .diskItem.active .diskIcon {
-  color: var(--accent-blue);
+  color: var(--text-primary);
 }
 
 .diskLabel {
-  flex: 1;
+  display: block;
+  max-width: 100%;
   font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
 }
 
-.diskItem.active .diskLabel {
-  color: var(--text-primary);
-  font-weight: var(--font-weight-medium);
+.healthTag {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.03em;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 5px;
+  background: var(--bg-surface);
+  line-height: 1.2;
+}
+
+.healthTagOk {
+  color: var(--accent-green);
+  border-color: color-mix(in srgb, var(--accent-green) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent-green-muted) 60%, transparent);
+}
+
+.healthTagWarning {
+  color: var(--accent-amber);
+  border-color: color-mix(in srgb, var(--accent-amber) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent-amber-muted) 60%, transparent);
+}
+
+.healthTagError {
+  color: var(--accent-red);
+  border-color: color-mix(in srgb, var(--accent-red) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent-red-muted) 60%, transparent);
 }
 
 .closeBtn {
@@ -152,11 +243,12 @@
   justify-content: center;
   width: 16px;
   height: 16px;
-  border-radius: var(--radius-xs);
+  border-radius: 999px;
   color: var(--text-muted);
   opacity: 0;
   flex-shrink: 0;
   transition: color var(--transition-fast), background var(--transition-fast), opacity var(--transition-fast);
+  margin-top: 0;
 }
 
 .closeBtn:hover {
@@ -185,6 +277,16 @@
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
+@media (max-width: 960px) {
+  .sidebar {
+    min-width: 220px;
+  }
+
+  .diskItem {
+    min-height: 30px;
+  }
+}
+
 .footerBtn:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
@@ -195,5 +297,3 @@
   background: var(--border-subtle);
   margin: 0;
 }
-
-

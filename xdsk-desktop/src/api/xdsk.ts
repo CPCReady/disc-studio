@@ -16,12 +16,24 @@ export async function runXdsk(args: string[]): Promise<CommandOutput> {
   return invoke<CommandOutput>('run_xdsk', { args: ['--no-color', ...args] });
 }
 
+export async function runXcart(args: string[]): Promise<CommandOutput> {
+  return invoke<CommandOutput>('run_xcart', { args });
+}
+
 export async function checkXdskAvailable(): Promise<boolean> {
   return invoke<boolean>('xdsk_available');
 }
 
 export async function getXdskVersion(): Promise<string> {
   return invoke<string>('xdsk_version');
+}
+
+export async function checkXcartAvailable(): Promise<boolean> {
+  return invoke<boolean>('xcart_available');
+}
+
+export async function getXcartVersion(): Promise<string> {
+  return invoke<string>('xcart_version');
 }
 
 export interface EmulatorLaunchOptions {

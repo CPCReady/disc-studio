@@ -34,6 +34,7 @@ jobs:
         with:
           workspaces: |
             xdsk -> target
+            xcart -> target
             xdsk-desktop/src-tauri -> target
 
       # ── Compilar xdsk CLI y copiar como sidecar ──────────────────────────────
@@ -45,6 +46,15 @@ jobs:
         run: |
           copy xdsk\target\x86_64-pc-windows-msvc\release\xdsk.exe `
                xdsk-desktop\src-tauri\binaries\xdsk-x86_64-pc-windows-msvc.exe
+
+      - name: Build xcart CLI (sidecar)
+        working-directory: xcart
+        run: cargo build --release --target x86_64-pc-windows-msvc
+
+      - name: Copy xcart sidecar
+        run: |
+          copy xcart\target\x86_64-pc-windows-msvc\release\xcart.exe `
+               xdsk-desktop\src-tauri\binaries\xcart-x86_64-pc-windows-msvc.exe
 
       # ── npm install ──────────────────────────────────────────────────────────
       - name: npm ci

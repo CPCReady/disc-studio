@@ -17,6 +17,8 @@ interface SettingsStore {
   fontFamily: FontFamily;
   setFontFamily: (f: FontFamily) => void;
   // Layout persistence
+  leftSidebarWidth: number;
+  setLeftSidebarWidth: (w: number) => void;
   rightSidebarWidth: number;
   setRightSidebarWidth: (w: number) => void;
   bottomPanelHeight: number;
@@ -40,6 +42,8 @@ export const useSettingsStore = create<SettingsStore>()(
       fontFamily: 'ibm-plex',
       setFontFamily: (fontFamily) => set({ fontFamily }),
       // Layout persistence defaults
+      leftSidebarWidth: 280,
+      setLeftSidebarWidth: (leftSidebarWidth) => set({ leftSidebarWidth }),
       rightSidebarWidth: 220,
       setRightSidebarWidth: (rightSidebarWidth) => set({ rightSidebarWidth }),
       bottomPanelHeight: 200,

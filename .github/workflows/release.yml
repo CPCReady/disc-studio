@@ -40,6 +40,7 @@ jobs:
             runner: macos-15
             rust-target: aarch64-apple-darwin
             sidecar: xdsk-aarch64-apple-darwin
+            xcart-sidecar: xcart-aarch64-apple-darwin
             cli-binary: xdsk
             cli-asset: xdsk-macos-arm64
             exe-ext: ''
@@ -49,6 +50,7 @@ jobs:
             runner: macos-13
             rust-target: x86_64-apple-darwin
             sidecar: xdsk-x86_64-apple-darwin
+            xcart-sidecar: xcart-x86_64-apple-darwin
             cli-binary: xdsk
             cli-asset: xdsk-macos-x86_64
             exe-ext: ''
@@ -58,6 +60,7 @@ jobs:
             runner: ubuntu-22.04
             rust-target: x86_64-unknown-linux-gnu
             sidecar: xdsk-x86_64-unknown-linux-gnu
+            xcart-sidecar: xcart-x86_64-unknown-linux-gnu
             cli-binary: xdsk
             cli-asset: xdsk-linux-x86_64
             exe-ext: ''
@@ -67,6 +70,7 @@ jobs:
             runner: windows-latest
             rust-target: x86_64-pc-windows-msvc
             sidecar: xdsk-x86_64-pc-windows-msvc.exe
+            xcart-sidecar: xcart-x86_64-pc-windows-msvc.exe
             cli-binary: xdsk.exe
             cli-asset: xdsk-windows-x86_64.exe
             exe-ext: '.exe'
@@ -106,11 +110,16 @@ jobs:
         with:
           workspaces: |
             xdsk
+            xcart
             xdsk-desktop/src-tauri
 
       # ── Build xdsk CLI ──────────────────────────────────────────────────────
       - name: Build xdsk CLI
         working-directory: xdsk
+        run: cargo build --release --target ${{ matrix.rust-target }}
+
+      - name: Build xcart CLI
+        working-directory: xcart
         run: cargo build --release --target ${{ matrix.rust-target }}
 
       # ── Copy sidecar binary into Tauri binaries/ ────────────────────────────
@@ -119,6 +128,12 @@ jobs:
         run: |
           cp "xdsk/target/${{ matrix.rust-target }}/release/xdsk${{ matrix.exe-ext }}" \
              "xdsk-desktop/src-tauri/binaries/${{ matrix.sidecar }}"
+
+      - name: Copy xcart sidecar binary
+        shell: bash
+        run: |
+          cp "xcart/target/${{ matrix.rust-target }}/release/xcart${{ matrix.exe-ext }}" \
+             "xdsk-desktop/src-tauri/binaries/${{ matrix.xcart-sidecar }}"
 
       # ── Frontend deps ───────────────────────────────────────────────────────
       - name: Install npm dependencies

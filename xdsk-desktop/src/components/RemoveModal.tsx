@@ -1,6 +1,7 @@
 // MIT License
 // Copyright (c) Destroyer 2026.
 import { Trash2, TriangleAlert } from 'lucide-react';
+import { message } from '@tauri-apps/plugin-dialog';
 import { Modal } from './Modal';
 import { Button } from './Button';
 import { useDiscCommand } from '../hooks/useDiscCommand';
@@ -20,10 +21,17 @@ export function RemoveModal({ open, diskPath, files, onClose, onDone }: Props) {
   const { execute, loading } = useDiscCommand();
 
   const handleRemove = async () => {
+    let failures = 0;
     for (const fileName of files) {
-      await execute(['remove', diskPath, fileName, '--force']);
+      const result = await execute(['remove', diskPath, fileName, '--force']);
+      if (!result?.success) failures += 1;
     }
-    onDone();
+    if (failures === 0) {
+      await message(t('remove_done_ok'), { title: t('success'), kind: 'info' });
+      onDone();
+      return;
+    }
+    await message(`${t('remove_done_fail')} (${failures}/${files.length})`, { title: t('error'), kind: 'error' });
   };
 
   return (

@@ -166,8 +166,9 @@ build_macos() {
           [[ -f "$src_dir/roms/$rom" ]] || { missing_roms=true; break; }
         done
         if [[ "$missing_roms" == true ]]; then
-          warn "xcart: faltan ROMs en xcart/roms/ (os.rom, basic.rom, amsdos.rom) — omitido"
-          continue
+          fail "xcart: faltan ROMs en xcart/roms/ (os.rom, basic.rom, amsdos.rom)"
+          ((ERRORS++))
+          return
         fi
       fi
       info "cargo build $cli (release)"
@@ -179,6 +180,10 @@ build_macos() {
     if [[ -f "$out/xdsk" ]]; then
       cp "$out/xdsk" "$GUI_DIR/src-tauri/binaries/xdsk-$rust_target"
       info "Sidecar xdsk-$rust_target actualizado"
+    fi
+    if [[ -f "$out/xcart" ]]; then
+      cp "$out/xcart" "$GUI_DIR/src-tauri/binaries/xcart-$rust_target"
+      info "Sidecar xcart-$rust_target actualizado"
     fi
   fi
 
@@ -229,8 +234,9 @@ build_linux() {
           [[ -f "$src_dir/roms/$rom" ]] || { missing_roms=true; break; }
         done
         if [[ "$missing_roms" == true ]]; then
-          warn "xcart: faltan ROMs en xcart/roms/ (os.rom, basic.rom, amsdos.rom) — omitido"
-          continue
+          fail "xcart: faltan ROMs en xcart/roms/ (os.rom, basic.rom, amsdos.rom)"
+          ((ERRORS++))
+          return
         fi
       fi
       info "docker build $cli → linux/amd64"
@@ -248,6 +254,10 @@ build_linux() {
     if [[ -f "$out/xdsk" ]]; then
       cp "$out/xdsk" "$GUI_DIR/src-tauri/binaries/xdsk-$rust_target"
       info "Sidecar xdsk-$rust_target actualizado"
+    fi
+    if [[ -f "$out/xcart" ]]; then
+      cp "$out/xcart" "$GUI_DIR/src-tauri/binaries/xcart-$rust_target"
+      info "Sidecar xcart-$rust_target actualizado"
     fi
   fi
 
@@ -320,6 +330,16 @@ cargo build --release --target x86_64-pc-windows-gnu
 cp target/x86_64-pc-windows-gnu/release/xdsk.exe \
    $ROOT/xdsk-desktop/src-tauri/binaries/xdsk-x86_64-pc-windows-gnu.exe
 
+# ── CLI xcart (requerido) ──
+if [[ ! -f $ROOT/xcart/roms/os.rom || ! -f $ROOT/xcart/roms/basic.rom || ! -f $ROOT/xcart/roms/amsdos.rom ]]; then
+  echo "[error] xcart ROMs missing (required): xcart/roms/os.rom, basic.rom, amsdos.rom"
+  exit 1
+fi
+cd $ROOT/xcart
+cargo build --release --target x86_64-pc-windows-gnu
+cp target/x86_64-pc-windows-gnu/release/xcart.exe \
+   $ROOT/xdsk-desktop/src-tauri/binaries/xcart-x86_64-pc-windows-gnu.exe
+
 # ── GUI xdsk-desktop (NSIS) ──
 cd $ROOT/xdsk-desktop
 npm ci --silent
@@ -334,6 +354,7 @@ npm run tauri build -- --target x86_64-pc-windows-gnu --bundles nsis
 
   local nsis_dir="$GUI_DIR/src-tauri/target/$rust_target/release/bundle/nsis"
   copy_bin "$ROOT/xdsk/target/$rust_target/release/xdsk.exe" "$out/xdsk.exe"
+  copy_bin "$ROOT/xcart/target/$rust_target/release/xcart.exe" "$out/xcart.exe"
   copy_bundles "$nsis_dir" "$out" "*.exe"
   success "Instalador Windows NSIS generado en dist/windows/"
 }

@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { useDiscCommand } from '../hooks/useDiscCommand';
-import { parseCheck } from '../utils/parsers';
+import { parseCheck, deriveDiskHealth } from '../utils/parsers';
 import type { CheckResult } from '../types/xdsk';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
@@ -19,7 +19,7 @@ const SECTIONS: Array<{ key: keyof Pick<CheckResult, 'header' | 'directory' | 'b
 ];
 
 export function CheckPanel() {
-  const { activeDiskId, openDisks, checkTrigger } = useAppStore();
+  const { activeDiskId, openDisks, checkTrigger, setDiskHealth } = useAppStore();
   const { t } = useI18n();
   const { execute } = useDiscCommand();
   const [result, setResult] = useState<CheckResult | null>(null);
@@ -29,8 +29,12 @@ export function CheckPanel() {
   const handleCheck = useCallback(async () => {
     if (!activeDisk) return;
     const r = await execute(['check', activeDisk.path]);
-    if (r) setResult(parseCheck(r.stdout + r.stderr));
-  }, [activeDisk, execute]);
+    if (r) {
+      const parsed = parseCheck(r.stdout + r.stderr);
+      setResult(parsed);
+      setDiskHealth(activeDisk.id, deriveDiskHealth(parsed));
+    }
+  }, [activeDisk, execute, setDiskHealth]);
 
   // Auto-run when the active disk changes (tab switch or new tab)
   useEffect(() => {

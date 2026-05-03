@@ -14,8 +14,13 @@
 .copy,
 .version {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.12);
+  color: #fff;
   font-family: var(--font-sans);
   letter-spacing: 0.02em;
   user-select: none;
+}
+
+[data-theme="light"] .copy,
+[data-theme="light"] .version {
+  color: #000;
 }

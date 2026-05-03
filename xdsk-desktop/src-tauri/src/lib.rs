@@ -19,9 +19,11 @@ pub fn run() {
             commands::xdsk::run_xdsk,
             commands::xdsk::xdsk_available,
             commands::xdsk::xdsk_version,
+            commands::xcart::run_xcart,
+            commands::xcart::xcart_available,
+            commands::xcart::xcart_version,
             commands::emulator::launch_emulator,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-

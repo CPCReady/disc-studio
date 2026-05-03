@@ -2,6 +2,7 @@
 // Copyright (c) Destroyer 2026.
 import { useState } from 'react';
 import { FolderOpen } from 'lucide-react';
+import { message } from '@tauri-apps/plugin-dialog';
 import { Modal } from './Modal';
 import { TextInput } from './TextInput';
 import { Button } from './Button';
@@ -31,10 +32,17 @@ export function CopyModal({ open, sourceDiskPath, files, onClose, onDone }: Prop
 
   const handleCopy = async () => {
     if (!destDisk) return;
+    let failures = 0;
     for (const fileName of files) {
-      await execute(['copy', sourceDiskPath, fileName, destDisk]);
+      const result = await execute(['copy', sourceDiskPath, fileName, destDisk]);
+      if (!result?.success) failures += 1;
     }
-    onDone();
+    if (failures === 0) {
+      await message(t('copy_done_ok'), { title: t('success'), kind: 'info' });
+      onDone();
+      return;
+    }
+    await message(`${t('copy_done_fail')} (${failures}/${files.length})`, { title: t('error'), kind: 'error' });
   };
 
   const handleClose = () => {

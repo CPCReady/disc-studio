@@ -2,7 +2,7 @@
 // Copyright (c) Destroyer 2026.
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { ConsoleEntry, BottomTabId, OpenDisk, CompareResult } from '../types/app';
+import type { ConsoleEntry, BottomTabId, OpenDisk, CompareResult, DiskHealth } from '../types/app';
 import type { DiffEntry } from '../types/xdsk';
 import { uid, basename } from '../utils/formatters';
 
@@ -37,6 +37,9 @@ interface AppStore {
 
   // Console
   consoleEntries: ConsoleEntry[];
+
+  // Disk health by open disk id
+  diskHealth: Record<string, DiskHealth>;
 
   // Actions — disks
   addOpenDisk: (path: string) => string;
@@ -75,6 +78,10 @@ interface AppStore {
   // Actions — console
   addConsoleEntry: (type: ConsoleEntry['type'], content: string) => void;
   clearConsole: () => void;
+
+  // Actions — health
+  setDiskHealth: (diskId: string, health: DiskHealth) => void;
+  clearDiskHealth: (diskId: string) => void;
 }
 
 export const useAppStore = create<AppStore>()(
@@ -91,6 +98,7 @@ export const useAppStore = create<AppStore>()(
       discVersion: null,
       isDiscAvailable: false,
       consoleEntries: [],
+      diskHealth: {},
       checkTrigger: 0,
       viewClearTrigger: 0,
 
@@ -118,7 +126,9 @@ export const useAppStore = create<AppStore>()(
           const openTabs = disks.filter((d) => d.tabOpen);
           const activeDiskId =
             s.activeDiskId === id ? (openTabs[openTabs.length - 1]?.id ?? disks[disks.length - 1]?.id ?? null) : s.activeDiskId;
-          return { openDisks: disks, activeDiskId };
+          const nextHealth = { ...s.diskHealth };
+          delete nextHealth[id];
+          return { openDisks: disks, activeDiskId, diskHealth: nextHealth };
         }),
 
       setActiveDisk: (id) => set((s) => ({
@@ -183,6 +193,16 @@ export const useAppStore = create<AppStore>()(
         })),
 
       clearConsole: () => set({ consoleEntries: [] }),
+
+      setDiskHealth: (diskId, health) =>
+        set((s) => ({ diskHealth: { ...s.diskHealth, [diskId]: health } })),
+
+      clearDiskHealth: (diskId) =>
+        set((s) => {
+          const next = { ...s.diskHealth };
+          delete next[diskId];
+          return { diskHealth: next };
+        }),
     }),
     {
       name: 'xdsk-app-v2',
@@ -191,6 +211,7 @@ export const useAppStore = create<AppStore>()(
         activeDiskId: s.activeDiskId,
         activeBottomTab: s.activeBottomTab,
         isBottomPanelOpen: s.isBottomPanelOpen,
+        diskHealth: s.diskHealth,
       }),
     }
   )
