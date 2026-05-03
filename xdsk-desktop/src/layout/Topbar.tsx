@@ -5,7 +5,7 @@ import { Cpu, Download, Gamepad2, Trash2, Upload } from 'lucide-react';
 import { checkXcartAvailable, checkXcartRomsReady, launchEmulator } from '../api/xdsk';
 import { useAppStore } from '../store/appStore';
 import { useSettingsStore } from '../store/settingsStore';
-import { Button } from '../components/Button';
+import { IconButton } from '../components/IconButton';
 import { useI18n } from '../i18n/useI18n';
 import styles from './Topbar.module.css';
 
@@ -54,30 +54,40 @@ export function Topbar() {
   return (
     <header className={styles.topbar}>
       <div className={styles.actions}>
-        <Button variant="primary" icon={<Upload size={12} />} onClick={triggerTopbarImport} disabled={!hasActiveDisk}>
-          {t('explorer_import')}
-        </Button>
-        <Button variant="primary" icon={<Download size={12} />} onClick={triggerTopbarExport} disabled={!hasSelection}>
-          {t('explorer_export')}
-        </Button>
-        <Button variant="danger" icon={<Trash2 size={12} />} onClick={triggerTopbarRemove} disabled={!hasSelection}>
-          {t('explorer_remove')}
-        </Button>
-        <Button
-          variant="primary"
-          icon={<Cpu size={12} />}
+        <IconButton
+          icon={<Upload size={13} />}
+          variant="default"
+          title={t('explorer_import')}
+          onClick={triggerTopbarImport}
+          disabled={!hasActiveDisk}
+        />
+        <IconButton
+          icon={<Download size={13} />}
+          variant="default"
+          title={t('explorer_export')}
+          onClick={triggerTopbarExport}
+          disabled={!hasSelection}
+        />
+        <IconButton
+          icon={<Trash2 size={13} />}
+          variant="danger"
+          title={t('explorer_remove')}
+          onClick={triggerTopbarRemove}
+          disabled={!hasSelection}
+        />
+        <IconButton
+          icon={<Cpu size={13} />}
+          variant="default"
           onClick={async () => {
             if (!activeDisk || !emulatorPath || !hasSelection) return;
             await launchEmulator({ emulatorPath, diskPath: activeDisk.path, runFile: emulatorRunFile });
           }}
           disabled={!canRunEmulator}
           title={!emulatorPath ? 'Configure emulator path in Settings' : t('explorer_emulator')}
-        >
-          {t('explorer_emulator')}
-        </Button>
-        <Button
-          variant="primary"
-          icon={<Gamepad2 size={12} />}
+        />
+        <IconButton
+          icon={<Gamepad2 size={13} />}
+          variant="default"
           onClick={triggerTopbarExportCpr}
           disabled={!canExportCpr}
           title={
@@ -87,9 +97,7 @@ export function Topbar() {
                 ? t('explorer_export_cpr_roms_missing')
                 : t('explorer_export_cpr')
           }
-        >
-          {t('explorer_export_cpr')}
-        </Button>
+        />
       </div>
     </header>
   );

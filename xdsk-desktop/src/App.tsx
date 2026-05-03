@@ -13,14 +13,25 @@ import { Save } from 'lucide-react';
 
 function App() {
   const { activeDiskId, openDisks, activeCompareId } = useAppStore();
-  const activeDisk = openDisks.find((d) => d.id === activeDiskId);
+  const hasActiveDisk = openDisks.some((d) => d.id === activeDiskId);
 
   return (
     <AppShell>
       {activeCompareId ? (
         <DiffResultView key={activeCompareId} compareId={activeCompareId} />
-      ) : activeDisk ? (
-        <DskExplorer key={activeDisk.id} diskId={activeDisk.id} diskPath={activeDisk.path} />
+      ) : hasActiveDisk ? (
+        <>
+          {openDisks
+            .filter((d) => d.tabOpen)
+            .map((disk) => (
+              <div
+                key={disk.id}
+                style={{ display: disk.id === activeDiskId ? 'contents' : 'none' }}
+              >
+                <DskExplorer diskId={disk.id} diskPath={disk.path} />
+              </div>
+            ))}
+        </>
       ) : (
         <EmptyState
           icon={<Save size={36} />}
