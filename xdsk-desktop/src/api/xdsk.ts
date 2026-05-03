@@ -40,6 +40,10 @@ export async function checkXcartRomsReady(path: string): Promise<boolean> {
   return invoke<boolean>('xcart_roms_ready', { path });
 }
 
+export async function writeTextFile(path: string, content: string): Promise<void> {
+  return invoke<void>('write_text_file', { path, content });
+}
+
 export interface EmulatorLaunchOptions {
   emulatorPath: string;
   diskPath: string;

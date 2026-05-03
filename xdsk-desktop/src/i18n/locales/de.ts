@@ -169,6 +169,8 @@ const de: Record<TranslationKey, string> = {
   view_ascii: 'ASCII',
   view_disasm: 'Disassembler',
   view_run: 'Anzeigen',
+  view_export: 'Exportieren',
+  view_export_done: 'Ansicht erfolgreich exportiert.',
 
   create_title: 'Diskette erstellen',
   create_output: 'Ausgabepfad',

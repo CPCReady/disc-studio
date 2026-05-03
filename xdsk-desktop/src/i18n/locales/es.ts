@@ -171,6 +171,8 @@ const es: Record<TranslationKey, string> = {
   view_ascii: 'ASCII',
   view_disasm: 'Desensamblado',
   view_run: 'Ver',
+  view_export: 'Exportar',
+  view_export_done: 'Vista exportada correctamente.',
 
   create_title: 'Crear disco',
   create_output: 'Ruta de salida',

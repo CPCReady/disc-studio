@@ -185,6 +185,8 @@ const en = {
   view_ascii: 'ASCII',
   view_disasm: 'Disassembly',
   view_run: 'View',
+  view_export: 'Export',
+  view_export_done: 'View exported successfully.',
 
   // Create panel
   create_title: 'Create Disk',

@@ -1,9 +1,11 @@
 // MIT License
 // Copyright (c) Destroyer 2026.
 import { useState, useEffect, useCallback } from 'react';
-import { Eye } from 'lucide-react';
+import { Download, Eye } from 'lucide-react';
+import { save, message } from '@tauri-apps/plugin-dialog';
 import { useAppStore } from '../store/appStore';
 import { useDiscCommand } from '../hooks/useDiscCommand';
+import { writeTextFile } from '../api/xdsk';
 import { Card } from '../components/Card';
 import { TextInput } from '../components/TextInput';
 import { Select } from '../components/Select';
@@ -29,6 +31,11 @@ export function ViewPanel() {
   const [fileName, setFileName] = useState('');
   const [format, setFormat] = useState('auto');
   const [output, setOutput] = useState('');
+  const normalizedOutput = output
+    .replace(/\r/g, '')
+    .split('\n')
+    .filter((line) => line.trim() !== '')
+    .join('\n');
 
   const activeDisk = openDisks.find((d) => d.id === activeDiskId);
 
@@ -49,8 +56,17 @@ export function ViewPanel() {
     setOutput(result ? result.stdout || result.stderr : '');
   }, [diskPath, fileName, format, execute]);
 
-  const handleView = async () => {
-    await runView();
+  const handleExport = async () => {
+    if (!normalizedOutput.trim() || !fileName) return;
+    const stem = fileName.replace(/\.[^.]*$/, '') || fileName;
+    const defaultPath = `${stem}-${format}.txt`;
+    const target = await save({
+      defaultPath,
+      filters: [{ name: 'Text', extensions: ['txt'] }],
+    });
+    if (!target || typeof target !== 'string') return;
+    await writeTextFile(target, normalizedOutput);
+    await message(t('view_export_done'), { title: t('success'), kind: 'info' });
   };
 
   useEffect(() => {
@@ -82,12 +98,12 @@ export function ViewPanel() {
             <Select label={t('view_format')} value={format} onChange={setFormat} options={FORMAT_OPTIONS} />
             <Button
               variant="primary"
-              icon={<Eye size={12} />}
+              icon={<Download size={12} />}
               loading={loading}
-              disabled={!fileName || !diskPath}
-              onClick={handleView}
+              disabled={!normalizedOutput.trim()}
+              onClick={handleExport}
             >
-              {t('view_run')}
+              {t('view_export')}
             </Button>
           </div>
         </div>
@@ -96,7 +112,7 @@ export function ViewPanel() {
       {output && (
         <Card title={t('view_output')}>
           <pre className={viewStyles.output}>
-            {output.split('\n').filter((l) => l.trim() !== '').join('\n')}
+            {normalizedOutput}
           </pre>
         </Card>
       )}
