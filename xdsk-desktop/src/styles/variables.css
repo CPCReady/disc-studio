@@ -129,39 +129,39 @@
   color-scheme: light;
 
   /* --- Backgrounds --- */
-  --bg-app:      #edeae4;
-  --bg-surface:  #f4f1ec;
-  --bg-elevated: #faf9f7;
-  --bg-hover:    #e7e3dc;
-  --bg-active:   #dedad2;
-  --bg-selected: #dce8f8;
-  --bg-input:    #f8f6f2;
-  --bg-sidebar:  #e5e1da;
-  --bg-topbar:   #e9e5de;
-  --bg-modal:    #faf9f7;
-  --bg-overlay:  rgba(0, 0, 0, 0.28);
-  --bg-code:     #f0ede8;
+  --bg-app:      #ddd8d0;
+  --bg-surface:  #f8f7f6;
+  --bg-elevated: #fbfaf9;
+  --bg-hover:    #efede9;
+  --bg-active:   #e8e5df;
+  --bg-selected: #f5e6df;
+  --bg-input:    #f7f5f2;
+  --bg-sidebar:  #e8e5df;
+  --bg-topbar:   #efede9;
+  --bg-modal:    #f8f7f6;
+  --bg-overlay:  rgba(16, 18, 18, 0.20);
+  --bg-code:     #f3f1ed;
 
   /* --- Borders --- */
-  --border-subtle: #dedad2;
-  --border:        #ccc8c0;
-  --border-strong: #b6b2a8;
-  --border-focus:  #2a76f0;
+  --border-subtle: #e5e1da;
+  --border:        #ddd8d0;
+  --border-strong: #cfc8bf;
+  --border-focus:  #ca3c06;
 
   /* --- Text --- */
-  --text-primary:   #1c1c22;
-  --text-secondary: #5a5a68;
-  --text-muted:     #9898a4;
-  --text-disabled:  #bababc;
-  --text-link:      #1a66e0;
-  --text-inverse:   #faf9f7;
-  --text-code:      #1a3a7a;
+  --text-primary:   #101212;
+  --text-secondary: #646464;
+  --text-muted:     #a3a2a0;
+  --text-disabled:  #bdbab6;
+  --text-link:      #ca3c06;
+  --text-inverse:   #f8f7f6;
+  --text-code:      #7a2f1a;
 
   /* --- Accent Blue --- */
-  --accent-blue:       #2a76f0;
-  --accent-blue-hover: #1a60d8;
-  --accent-blue-muted: rgba(42, 118, 240, 0.12);
-  --accent-blue-dim:   rgba(42, 118, 240, 0.06);
+  --accent-blue:       #ca3c06;
+  --accent-blue-hover: #b0350b;
+  --accent-blue-muted: rgba(202, 60, 6, 0.14);
+  --accent-blue-dim:   rgba(202, 60, 6, 0.08);
 
   /* --- Accent Green --- */
   --accent-green:       #16a34a;
@@ -178,14 +178,14 @@
   --accent-amber-muted: rgba(217, 119, 6, 0.12);
 
   /* --- Shadows --- */
-  --shadow-sm:    0 1px 3px rgba(0,0,0,0.08);
-  --shadow-md:    0 4px 12px rgba(0,0,0,0.10);
-  --shadow-lg:    0 8px 24px rgba(0,0,0,0.12);
-  --shadow-modal: 0 20px 64px rgba(0,0,0,0.22);
+  --shadow-sm:    0 1px 3px rgba(16,18,18,0.08);
+  --shadow-md:    0 4px 12px rgba(16,18,18,0.10);
+  --shadow-lg:    0 8px 24px rgba(16,18,18,0.12);
+  --shadow-modal: 0 20px 64px rgba(16,18,18,0.22);
 
   /* --- Scrollbar --- */
-  --scrollbar-thumb:       #cac6bd;
-  --scrollbar-thumb-hover: #b4b0a8;
+  --scrollbar-thumb:       #cfc8bf;
+  --scrollbar-thumb-hover: #b9b6b2;
 }
 
 /* Font size overrides via data-font-size attribute on shell root */

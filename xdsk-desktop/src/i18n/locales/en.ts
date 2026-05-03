@@ -61,6 +61,8 @@ const en = {
   explorer_check: 'Check',
   explorer_info: 'Info',
   explorer_emulator: 'Emulator',
+  explorer_export_cpr: 'Export CPR',
+  explorer_export_cpr_unavailable: 'xcart not available',
   explorer_load_addr: 'Load',
   explorer_exec_addr: 'Exec',
   explorer_dsk_path: 'Path',
@@ -94,6 +96,20 @@ const en = {
   export_strip_header: 'Strip AMSDOS header',
   export_strip_header_desc: 'Export raw file data without the 128-byte AMSDOS header.',
   export_submit: 'Export',
+  export_done_ok: 'Files exported successfully.',
+  export_done_fail: 'Some files could not be exported.',
+
+  // Export CPR modal
+  export_cpr_title: 'Export CPR Cartridge',
+  export_cpr_output: 'Output CPR file',
+  export_cpr_output_placeholder: 'Select output CPR file…',
+  export_cpr_browse: 'Browse',
+  export_cpr_autostart: 'Autostart BASIC command (optional)',
+  export_cpr_autostart_hint: 'Max {max} characters. Example: run"disc"',
+  export_cpr_autostart_too_long: 'Command too long (max {max} characters).',
+  export_cpr_submit: 'Export CPR',
+  export_cpr_done_ok: 'CPR exported successfully.',
+  export_cpr_done_fail: 'CPR export failed.',
 
   // Import modal
   import_title: 'Import Files',
@@ -110,6 +126,8 @@ const en = {
   import_system: 'System file',
   import_force: 'Overwrite existing',
   import_submit: 'Import',
+  import_done_ok: 'Files imported successfully.',
+  import_done_fail: 'Some files could not be imported.',
 
   // Remove modal
   remove_title: 'Remove Files',
@@ -120,6 +138,8 @@ const en = {
   remove_confirm_detail: 'This action cannot be undone.',
   remove_force: 'Force remove (ignore read-only)',
   remove_submit: 'Remove',
+  remove_done_ok: 'Files removed successfully.',
+  remove_done_fail: 'Some files could not be removed.',
 
   // Copy modal
   copy_title: 'Copy to Disk',
@@ -128,6 +148,8 @@ const en = {
   copy_browse: 'Browse',
   copy_force: 'Overwrite existing',
   copy_submit: 'Copy',
+  copy_done_ok: 'Files copied successfully.',
+  copy_done_fail: 'Some files could not be copied.',
 
   // Check panel
   check_title: 'Disk Check',
@@ -222,6 +244,9 @@ const en = {
   settings_emulator_path: 'Emulator Path',
   settings_emulator_path_desc: 'Path to the RetroVirtualMachine executable.',
   settings_emulator_browse: 'Browse',
+  settings_xcart_roms_path: 'XCART ROMs Path',
+  settings_xcart_roms_path_desc: 'Folder containing os.rom, basic.rom and amsdos.rom for CPR export.',
+  settings_xcart_roms_browse: 'Browse',
   settings_font_family: 'Font Family',
   settings_font_family_desc: 'Select the interface typeface.',
   settings_font_size: 'Font Size',
@@ -234,6 +259,16 @@ const en = {
   right_section_blockmap: 'Block Map',
   right_verification: 'Verification',
   right_no_disk: 'No disk open',
+  right_health: 'Health',
+  right_health_state: 'State',
+  right_health_ok: 'OK',
+  right_health_warning: 'Warning',
+  right_health_error: 'Error',
+  right_health_unknown: 'Unknown',
+  right_health_errors: 'Errors',
+  right_health_warnings: 'Warnings',
+  right_health_checked: 'Last check',
+  right_health_run_check: 'Run check',
 
   // Footer
   footer_copyright: '© 2026 Destroyer',

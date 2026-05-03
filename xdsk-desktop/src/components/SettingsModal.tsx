@@ -38,12 +38,28 @@ const FONT_FAMILY_OPTIONS: { value: FontFamily; label: string }[] = [
 
 export function SettingsModal({ isOpen, onClose }: Props) {
   const { t, language, setLanguage } = useI18n();
-  const { emulatorPath, setEmulatorPath, fontSize, setFontSize, fontFamily, setFontFamily } = useSettingsStore();
+  const {
+    emulatorPath,
+    setEmulatorPath,
+    xcartRomsPath,
+    setXcartRomsPath,
+    fontSize,
+    setFontSize,
+    fontFamily,
+    setFontFamily,
+  } = useSettingsStore();
 
   const handleBrowseEmulator = async () => {
     const selected = await openDialog({ multiple: false, directory: false });
     if (selected && typeof selected === 'string') {
       setEmulatorPath(selected);
+    }
+  };
+
+  const handleBrowseXcartRoms = async () => {
+    const selected = await openDialog({ multiple: false, directory: true });
+    if (selected && typeof selected === 'string') {
+      setXcartRomsPath(selected);
     }
   };
 
@@ -111,6 +127,27 @@ export function SettingsModal({ isOpen, onClose }: Props) {
             />
             <button className={styles.browseBtn} onClick={handleBrowseEmulator}>
               {t('settings_emulator_browse')}
+            </button>
+          </div>
+        </div>
+
+        {/* xcart ROMs path */}
+        <div className={styles.emulatorRow}>
+          <div className={styles.rowInfo}>
+            <label className={styles.label}>{t('settings_xcart_roms_path')}</label>
+            <span className={styles.desc}>{t('settings_xcart_roms_path_desc')}</span>
+          </div>
+          <div className={styles.pathInput}>
+            <input
+              className={styles.pathField}
+              type="text"
+              value={xcartRomsPath}
+              onChange={(e) => setXcartRomsPath(e.target.value)}
+              placeholder="/path/to/roms"
+              spellCheck={false}
+            />
+            <button className={styles.browseBtn} onClick={handleBrowseXcartRoms}>
+              {t('settings_xcart_roms_browse')}
             </button>
           </div>
         </div>

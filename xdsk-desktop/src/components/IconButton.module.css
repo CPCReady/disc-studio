@@ -36,8 +36,9 @@
 }
 
 .active {
-  color: var(--accent-blue);
-  background: var(--accent-blue-muted);
+  color: var(--text-primary);
+  background: var(--bg-active);
+  border-color: var(--border-strong);
 }
 
 .btn:disabled {

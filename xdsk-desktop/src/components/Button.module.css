@@ -31,13 +31,13 @@
 
 /* Variants */
 .primary {
-  background: var(--accent-blue);
-  color: #fff;
-  border-color: var(--accent-blue);
+  background: var(--bg-active);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
 }
 .primary:hover:not(:disabled) {
-  background: var(--accent-blue-hover);
-  border-color: var(--accent-blue-hover);
+  background: var(--bg-hover);
+  border-color: color-mix(in srgb, var(--border-strong) 82%, #000 18%);
 }
 .primary:active:not(:disabled) {
   opacity: 0.88;

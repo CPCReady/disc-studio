@@ -73,8 +73,8 @@
 }
 
 .iconBtn.active {
-  color: var(--accent-blue);
-  border-color: var(--border);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
   background: var(--bg-active);
 }
 

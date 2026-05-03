@@ -4,6 +4,7 @@ import { open, save } from '@tauri-apps/plugin-dialog';
 import { useAppStore } from '../store/appStore';
 
 const DSK_FILTER = [{ name: 'DSK Images', extensions: ['dsk', 'DSK'] }];
+const CPR_FILTER = [{ name: 'CPR Cartridge', extensions: ['cpr', 'CPR'] }];
 const ALL_FILTER = [{ name: 'All Files', extensions: ['*'] }];
 
 export function useDiskFile() {
@@ -28,6 +29,11 @@ export function useDiskFile() {
     return await save({ filters: DSK_FILTER, defaultPath: defaultName });
   };
 
+  /** Pick a save path for a CPR cartridge file */
+  const pickSaveCpr = async (defaultName = 'export.cpr'): Promise<string | null> => {
+    return await save({ filters: CPR_FILTER, defaultPath: defaultName });
+  };
+
   /** Pick one or more source files to import */
   const pickFiles = async (): Promise<string[]> => {
     const result = await open({ multiple: true, filters: ALL_FILTER });
@@ -45,6 +51,7 @@ export function useDiskFile() {
     openDisk,
     pickDisk,
     pickSaveDsk,
+    pickSaveCpr,
     pickFiles,
     pickDirectory,
   };

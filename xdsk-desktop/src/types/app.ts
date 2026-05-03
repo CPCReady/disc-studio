@@ -20,6 +20,15 @@ export interface OpenDisk {
   tabOpen: boolean;
 }
 
+export type DiskHealthLevel = 'unknown' | 'ok' | 'warning' | 'error';
+
+export interface DiskHealth {
+  level: DiskHealthLevel;
+  warnings: number;
+  errors: number;
+  checkedAt: string | null;
+}
+
 export interface CompareResult {
   id: string;
   disk1: string;

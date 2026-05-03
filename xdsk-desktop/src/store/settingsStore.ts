@@ -12,11 +12,15 @@ interface SettingsStore {
   setLanguage: (l: Language) => void;
   emulatorPath: string;
   setEmulatorPath: (p: string) => void;
+  xcartRomsPath: string;
+  setXcartRomsPath: (p: string) => void;
   fontSize: FontSize;
   setFontSize: (s: FontSize) => void;
   fontFamily: FontFamily;
   setFontFamily: (f: FontFamily) => void;
   // Layout persistence
+  leftSidebarWidth: number;
+  setLeftSidebarWidth: (w: number) => void;
   rightSidebarWidth: number;
   setRightSidebarWidth: (w: number) => void;
   bottomPanelHeight: number;
@@ -35,11 +39,15 @@ export const useSettingsStore = create<SettingsStore>()(
       setLanguage: (language) => set({ language }),
       emulatorPath: '',
       setEmulatorPath: (emulatorPath) => set({ emulatorPath }),
+      xcartRomsPath: '',
+      setXcartRomsPath: (xcartRomsPath) => set({ xcartRomsPath }),
       fontSize: '13',
       setFontSize: (fontSize) => set({ fontSize }),
       fontFamily: 'ibm-plex',
       setFontFamily: (fontFamily) => set({ fontFamily }),
       // Layout persistence defaults
+      leftSidebarWidth: 280,
+      setLeftSidebarWidth: (leftSidebarWidth) => set({ leftSidebarWidth }),
       rightSidebarWidth: 220,
       setRightSidebarWidth: (rightSidebarWidth) => set({ rightSidebarWidth }),
       bottomPanelHeight: 200,

@@ -8,6 +8,7 @@ import type {
   CheckIssue,
   DiffEntry,
 } from '../types/xdsk';
+import type { DiskHealth } from '../types/app';
 
 export function parseListJson(raw: string): DiskListResult {
   try {
@@ -116,6 +117,18 @@ export function parseCheck(text: string): CheckResult {
   }
 
   return result;
+}
+
+export function deriveDiskHealth(result: CheckResult): DiskHealth {
+  const all = [...result.header, ...result.directory, ...result.bitmap];
+  const warnings = all.filter((i) => i.type === 'warning').length;
+  const errors = all.filter((i) => i.type === 'error').length;
+  return {
+    level: errors > 0 ? 'error' : warnings > 0 ? 'warning' : 'ok',
+    warnings,
+    errors,
+    checkedAt: new Date().toISOString(),
+  };
 }
 
 export function parseDiff(text: string): DiffEntry[] {

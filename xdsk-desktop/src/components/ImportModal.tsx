@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { FolderOpen } from 'lucide-react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { message } from '@tauri-apps/plugin-dialog';
 import { Modal } from './Modal';
 import { Button } from './Button';
 import { useDiscCommand } from '../hooks/useDiscCommand';
@@ -71,11 +72,18 @@ export function ImportModal({ open, diskPath, onClose, onDone }: Props) {
 
   const handleImport = async () => {
     if (state.filePaths.length === 0) return;
+    let failures = 0;
     for (const fp of state.filePaths) {
-      await execute(buildArgs(fp));
+      const result = await execute(buildArgs(fp));
+      if (!result?.success) failures += 1;
     }
-    setState(INITIAL);
-    onDone();
+    if (failures === 0) {
+      await message(t('import_done_ok'), { title: t('success'), kind: 'info' });
+      setState(INITIAL);
+      onDone();
+      return;
+    }
+    await message(`${t('import_done_fail')} (${failures}/${state.filePaths.length})`, { title: t('error'), kind: 'error' });
   };
 
   const handleClose = () => {
