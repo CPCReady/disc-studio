@@ -1,6 +1,6 @@
 # xcart — Conversor DSK → Cartucho GX-4000 para Amstrad
 
-**xcart** convierte imágenes de disco **DSK** del Amstrad CPC en cartuchos **CPR** para la consola **Amstrad GX-4000**. Embebe internamente las ROMs de OS, BASIC y AMSDOS, parcheando AMSDOS para el formato de disco y el autostart opcional.
+**xcart** convierte imágenes de disco **DSK** del Amstrad CPC en cartuchos **CPR** para la consola **Amstrad GX-4000**. Carga las ROMs de OS, BASIC y AMSDOS desde una ruta configurada en runtime, parcheando AMSDOS para el formato de disco y el autostart opcional.
 
 ---
 
@@ -26,10 +26,10 @@
 
 ### Requisito previo: ROMs
 
-xcart necesita las ROMs del firmware de Amstrad CPC para generar el cartucho. Deben estar en `xcart/roms/`:
+xcart necesita las ROMs del firmware de Amstrad CPC para generar el cartucho. Deben estar juntas en una carpeta:
 
 ```
-xcart/roms/
+<RUTA_ROMS>/
   os.rom       (16 KB — ROM del sistema operativo)
   basic.rom    (16 KB — ROM de Amstrad BASIC)
   amsdos.rom   (16 KB — ROM de AMSDOS, será parcheada)
@@ -44,9 +44,6 @@ xcart/roms/
 git clone https://github.com/CPCReady/Disc-Image-Studio.git
 cd Disc-Image-Studio/xcart
 
-# Verificar que las ROMs están en su sitio
-ls roms/
-
 # Compilar
 cargo build --release --target aarch64-apple-darwin
 
@@ -59,7 +56,7 @@ cargo build --release --target aarch64-apple-darwin
 ```bash
 # Desde la raíz del proyecto:
 ./build.sh --cli-only
-# → dist/xcart  (solo si las ROMs están disponibles)
+# → dist/xcart
 ```
 
 ### Instalar globalmente
@@ -78,7 +75,7 @@ xcart --version
 xcart info juego.dsk
 
 # Convertir a cartucho con autostart
-xcart create juego.dsk juego.cpr -c 'run"game"'
+xcart create juego.dsk juego.cpr --roms-dir /ruta/a/roms -c 'run"game"'
 
 # Verificar el cartucho generado
 xcart check juego.cpr
@@ -93,7 +90,7 @@ xcart list juego.cpr
 
 ### `create` — Crear cartucho CPR
 
-Convierte un fichero DSK en un cartucho CPR para GX-4000. Embebe OS + BASIC + AMSDOS ROMs, parchea AMSDOS para el formato del disco y empaqueta los sectores como data chunks.
+Convierte un fichero DSK en un cartucho CPR para GX-4000. Carga OS + BASIC + AMSDOS desde la carpeta de ROMs, parchea AMSDOS para el formato del disco y empaqueta los sectores como data chunks.
 
 ```bash
 xcart create <ENTRADA.DSK> <SALIDA.CPR> [OPCIONES]
@@ -101,22 +98,25 @@ xcart create <ENTRADA.DSK> <SALIDA.CPR> [OPCIONES]
 
 | Opción | Descripción |
 |--------|-------------|
+| `--roms-dir <DIR>` | Carpeta que contiene `os.rom`, `basic.rom` y `amsdos.rom` |
 | `-c, --command <CMD>` | Comando BASIC de autostart al arrancar (máx 16 chars) |
+
+También puedes usar la variable de entorno `XCART_ROMS_DIR` en lugar de `--roms-dir`.
 
 **Ejemplos:**
 
 ```bash
 # Conversión básica sin autostart
-xcart create juego.dsk juego.cpr
+xcart create juego.dsk juego.cpr --roms-dir /ruta/a/roms
 
 # Con autostart: ejecuta el disco automáticamente
-xcart create juego.dsk juego.cpr -c 'run"disc"'
+xcart create juego.dsk juego.cpr --roms-dir /ruta/a/roms -c 'run"disc"'
 
 # Con autostart CPM
-xcart create juego.dsk juego.cpr -c '|cpm'
+xcart create juego.dsk juego.cpr --roms-dir /ruta/a/roms -c '|cpm'
 
 # Con autostart directo
-xcart create juego.dsk juego.cpr -c 'run"game"'
+xcart create juego.dsk juego.cpr --roms-dir /ruta/a/roms -c 'run"game"'
 ```
 
 **Estructura del CPR generado:**

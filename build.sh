@@ -159,18 +159,6 @@ build_macos() {
     for cli in xdsk xcdt xcart; do
       local src_dir="$ROOT/$cli"
       [[ -d "$src_dir" ]] || { warn "$cli: directorio no encontrado — omitido"; continue; }
-      # xcart requiere ROMs embebidas en compilación
-      if [[ "$cli" == xcart ]]; then
-        local missing_roms=false
-        for rom in os.rom basic.rom amsdos.rom; do
-          [[ -f "$src_dir/roms/$rom" ]] || { missing_roms=true; break; }
-        done
-        if [[ "$missing_roms" == true ]]; then
-          fail "xcart: faltan ROMs en xcart/roms/ (os.rom, basic.rom, amsdos.rom)"
-          ((ERRORS++))
-          return
-        fi
-      fi
       info "cargo build $cli (release)"
       (cd "$src_dir" && cargo build --release --target "$rust_target") || { fail "$cli build fallido"; ((ERRORS++)); continue; }
       copy_bin "$src_dir/target/$rust_target/release/$cli" "$out/$cli"
@@ -228,17 +216,6 @@ build_linux() {
     for cli in xdsk xcdt xcart; do
       local src_dir="$ROOT/$cli"
       [[ -d "$src_dir" ]] || { warn "$cli: directorio no encontrado — omitido"; continue; }
-      if [[ "$cli" == xcart ]]; then
-        local missing_roms=false
-        for rom in os.rom basic.rom amsdos.rom; do
-          [[ -f "$src_dir/roms/$rom" ]] || { missing_roms=true; break; }
-        done
-        if [[ "$missing_roms" == true ]]; then
-          fail "xcart: faltan ROMs en xcart/roms/ (os.rom, basic.rom, amsdos.rom)"
-          ((ERRORS++))
-          return
-        fi
-      fi
       info "docker build $cli → linux/amd64"
       docker run --rm \
         --platform linux/amd64 \
@@ -330,11 +307,7 @@ cargo build --release --target x86_64-pc-windows-gnu
 cp target/x86_64-pc-windows-gnu/release/xdsk.exe \
    $ROOT/xdsk-desktop/src-tauri/binaries/xdsk-x86_64-pc-windows-gnu.exe
 
-# ── CLI xcart (requerido) ──
-if [[ ! -f $ROOT/xcart/roms/os.rom || ! -f $ROOT/xcart/roms/basic.rom || ! -f $ROOT/xcart/roms/amsdos.rom ]]; then
-  echo "[error] xcart ROMs missing (required): xcart/roms/os.rom, basic.rom, amsdos.rom"
-  exit 1
-fi
+# ── CLI xcart ──
 cd $ROOT/xcart
 cargo build --release --target x86_64-pc-windows-gnu
 cp target/x86_64-pc-windows-gnu/release/xcart.exe \

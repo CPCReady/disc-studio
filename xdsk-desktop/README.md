@@ -13,6 +13,7 @@
 - [Explorar el contenido del disco](#explorar-el-contenido-del-disco)
 - [Importar ficheros](#importar-ficheros)
 - [Exportar ficheros](#exportar-ficheros)
+- [Exportar cartucho CPR](#exportar-cartucho-cpr)
 - [Borrar ficheros](#borrar-ficheros)
 - [Ver ficheros sin extraer](#ver-ficheros-sin-extraer)
 - [Verificar integridad del disco](#verificar-integridad-del-disco)
@@ -137,6 +138,22 @@ La lista de ficheros se actualiza automáticamente tras importar.
 
 ---
 
+## Exportar cartucho CPR
+
+Puedes convertir el DSK activo a un cartucho **.CPR** (GX-4000) desde el botón **Export CPR**.
+
+1. Abre **Settings** y configura **XCART ROMs Path** con la carpeta que contiene:
+   - `os.rom`
+   - `basic.rom`
+   - `amsdos.rom`
+2. Vuelve al explorador del disco y pulsa **Export CPR**.
+3. Elige la ruta de salida `.cpr`.
+4. Opcionalmente, añade un comando BASIC de arranque automático (máx. 16 caracteres).
+
+> Si no configuras `XCART ROMs Path`, la exportación CPR fallará con un error indicando que faltan ROMs.
+
+---
+
 ## Borrar ficheros
 
 1. Selecciona los ficheros en la tabla.
@@ -246,7 +263,7 @@ Si tienes **Retro Virtual Machine** instalado, puedes lanzar el disco directamen
 | Windows | Windows 10 64-bit |
 | Linux | Ubuntu 20.04 / Debian 11 o equivalente |
 
-La aplicación incluye el binario `xdsk` como sidecar — no necesitas instalarlo por separado.
+La aplicación incluye los binarios `xdsk` y `xcart` como sidecars. Para exportar CPR necesitas configurar en Settings la carpeta de ROMs de xcart.
 
 ---
 
