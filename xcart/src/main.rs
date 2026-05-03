@@ -26,7 +26,7 @@ mod roms;
     long_about = "\
 xcart converts Amstrad CPC DSK disk images into GX-4000 CPR cartridge files.
 
-The OS, BASIC and AMSDOS ROMs are embedded in this binary and patched at
+The OS, BASIC and AMSDOS ROMs are loaded from a ROM directory and patched at
 runtime to configure disk format and optional BASIC autostart.
 
 Examples:
@@ -60,6 +60,10 @@ enum Commands {
         /// BASIC autostart command (max 16 chars), e.g. `run"disc"` or `|cpm`
         #[arg(short, long, value_name = "COMMAND")]
         command: Option<String>,
+
+        /// Directory containing os.rom, basic.rom and amsdos.rom
+        #[arg(long, value_name = "DIR")]
+        roms_dir: Option<PathBuf>,
     },
 
     /// Verify the structure of a CPR cartridge file
@@ -129,7 +133,8 @@ fn main() {
             input,
             output,
             command,
-        } => commands::create::run(input, output, command.as_deref()),
+            roms_dir,
+        } => commands::create::run(input, output, command.as_deref(), roms_dir.as_deref()),
 
         Commands::Check { input } => commands::check::run(input),
 

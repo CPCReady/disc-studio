@@ -12,6 +12,8 @@ interface SettingsStore {
   setLanguage: (l: Language) => void;
   emulatorPath: string;
   setEmulatorPath: (p: string) => void;
+  xcartRomsPath: string;
+  setXcartRomsPath: (p: string) => void;
   fontSize: FontSize;
   setFontSize: (s: FontSize) => void;
   fontFamily: FontFamily;
@@ -37,6 +39,8 @@ export const useSettingsStore = create<SettingsStore>()(
       setLanguage: (language) => set({ language }),
       emulatorPath: '',
       setEmulatorPath: (emulatorPath) => set({ emulatorPath }),
+      xcartRomsPath: '',
+      setXcartRomsPath: (xcartRomsPath) => set({ xcartRomsPath }),
       fontSize: '13',
       setFontSize: (fontSize) => set({ fontSize }),
       fontFamily: 'ibm-plex',

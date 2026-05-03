@@ -44,7 +44,12 @@ const EXTENDED_PATCH: [u8; 22] = [
 /// # Arguments
 /// * `command` — optional BASIC autostart string (max 16 chars),
 ///               e.g. `run"disc"` or `|cpm`.
-pub fn run(input: &Path, output: &Path, command: Option<&str>) -> Result<()> {
+pub fn run(
+    input: &Path,
+    output: &Path,
+    command: Option<&str>,
+    roms_dir: Option<&Path>,
+) -> Result<()> {
     // Validate command length up front
     if let Some(cmd) = command {
         if cmd.len() > CMD_DATA_LEN {
@@ -60,6 +65,9 @@ pub fn run(input: &Path, output: &Path, command: Option<&str>) -> Result<()> {
     // ── Parse source DSK ──────────────────────────────────────────────────
     let dsk = DskFile::open(input)?;
     eprintln!("  Reading : {}", dsk);
+
+    let roms = roms::load(roms_dir)?;
+    eprintln!("  ROMs    : {}", roms.source_dir.display());
 
     let sector_data = dsk.collect_sector_data();
     let data_chunks: Vec<&[u8]> = sector_data.chunks(CHUNK_SIZE).collect();
@@ -77,17 +85,17 @@ pub fn run(input: &Path, output: &Path, command: Option<&str>) -> Result<()> {
     let mut writer = CprWriter::new();
 
     // cb00 — OS ROM
-    writer.add_chunk(roms::OS_ROM.to_vec())?;
-    eprintln!("  cb00    : OS ROM ({} bytes)", roms::OS_ROM.len());
+    writer.add_chunk(roms.os.clone())?;
+    eprintln!("  cb00    : OS ROM ({} bytes)", roms.os.len());
 
     // cb01 — BASIC ROM
-    writer.add_chunk(roms::BASIC_ROM.to_vec())?;
-    eprintln!("  cb01    : BASIC ROM ({} bytes)", roms::BASIC_ROM.len());
+    writer.add_chunk(roms.basic.clone())?;
+    eprintln!("  cb01    : BASIC ROM ({} bytes)", roms.basic.len());
 
     // cb02 — AMSDOS ROM (patched)
-    let amsdos = patch_amsdos(roms::AMSDOS_ROM, &dsk, command)?;
+    let amsdos = patch_amsdos(&roms.amsdos, &dsk, command)?;
     writer.add_chunk(amsdos)?;
-    eprintln!("  cb02    : AMSDOS ROM ({} bytes, patched)", roms::AMSDOS_ROM.len());
+    eprintln!("  cb02    : AMSDOS ROM ({} bytes, patched)", roms.amsdos.len());
 
     // cb03… — DSK sector data
     for (i, chunk) in data_chunks.iter().enumerate() {

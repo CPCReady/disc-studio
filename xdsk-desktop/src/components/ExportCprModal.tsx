@@ -17,13 +17,14 @@ interface Props {
   diskPath: string;
   defaultOutputPath: string;
   initialAutoCommand: string;
+  romsPath: string;
   onClose: () => void;
   onDone: () => void;
 }
 
 const MAX_AUTOSTART_LEN = 16;
 
-export function ExportCprModal({ open, diskPath, defaultOutputPath, initialAutoCommand, onClose, onDone }: Props) {
+export function ExportCprModal({ open, diskPath, defaultOutputPath, initialAutoCommand, romsPath, onClose, onDone }: Props) {
   const { t } = useI18n();
   const { pickSaveCpr } = useDiskFile();
   const { execute, loading, error, reset } = useXcartCommand();
@@ -63,6 +64,8 @@ export function ExportCprModal({ open, diskPath, defaultOutputPath, initialAutoC
     if (!canExport) return;
     reset();
     const args = ['create', diskPath, outputPath.trim()];
+    const romsDir = romsPath.trim();
+    if (romsDir) args.push('--roms-dir', romsDir);
     const cmd = autoCommand.trim();
     if (cmd) args.push('--command', cmd);
     const result = await execute(args);

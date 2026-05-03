@@ -36,7 +36,7 @@ interface CtxMenu {
 
 export function DskExplorer({ diskId, diskPath }: Props) {
   const { setViewTarget, setActiveBottomTab, setSelectedFileName, triggerCheck, triggerViewClear } = useAppStore();
-  const { emulatorPath } = useSettingsStore();
+  const { emulatorPath, xcartRomsPath } = useSettingsStore();
   const { t } = useI18n();
   const [files, setFiles] = useState<DiskFile[]>([]);
   const [totalSize, setTotalSize] = useState(0);
@@ -392,6 +392,7 @@ export function DskExplorer({ diskId, diskPath }: Props) {
         diskPath={diskPath}
         defaultOutputPath={cprDefaultPath}
         initialAutoCommand={cprAutoCommand}
+        romsPath={xcartRomsPath}
         onClose={() => setExportCprOpen(false)}
         onDone={() => { setExportCprOpen(false); triggerCheck(); }}
       />
