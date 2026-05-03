@@ -10,81 +10,14 @@
   user-select: none;
 }
 
-.pathBar {
+.actions {
   flex: 1;
   display: flex;
   align-items: center;
   gap: var(--space-2);
   min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.pathLabel {
-  font-size: var(--font-size-xs);
-  color: var(--text-muted);
-  font-weight: var(--font-weight-medium);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.pathValue {
-  font-family: var(--font-mono);
-  font-size: var(--font-size-xs);
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.pathPlaceholder {
-  font-size: var(--font-size-xs);
-  color: var(--text-disabled);
-}
-
-.left {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-shrink: 0;
-}
-
-.right {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-shrink: 0;
-}
-
-.iconBtn {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: 26px;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-xs);
-  color: var(--text-secondary);
-  border: 1px solid transparent;
-  transition: color var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast);
-}
-
-.iconBtn:hover {
-  color: var(--text-primary);
-  background: var(--bg-hover);
-}
-
-.iconBtn.active {
-  color: var(--text-primary);
-  border-color: var(--border-strong);
-  background: var(--bg-active);
-}
-
-.btnLabel {
-  font-size: var(--font-size-xs);
-}
-
-.divider {
-  width: 1px;
-  height: 16px;
-  background: var(--border-subtle);
-  margin: 0 var(--space-1);
-}
+.actions::-webkit-scrollbar { display: none; }

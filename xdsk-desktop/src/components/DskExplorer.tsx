@@ -1,16 +1,15 @@
 // MIT License
 // Copyright (c) Destroyer 2026.
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { RefreshCw, Upload, Download, Trash2, Lock, Monitor, ShieldCheck, Cpu, Gamepad2 } from 'lucide-react';
+import { RefreshCw, Lock, Monitor } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useDiscCommand } from '../hooks/useDiscCommand';
 import { parseListJson } from '../utils/parsers';
 import { formatBytes, fileTypeLabel } from '../utils/formatters';
-import { checkXcartAvailable, checkXcartRomsReady, launchEmulator } from '../api/xdsk';
+import { launchEmulator } from '../api/xdsk';
 import { useI18n } from '../i18n/useI18n';
 import { Toolbar, ToolbarSeparator, ToolbarSpacer } from './Toolbar';
-import { Button } from './Button';
 import { IconButton } from './IconButton';
 import { DataTable, type Column } from './DataTable';
 import { EmptyState } from './EmptyState';
@@ -35,7 +34,18 @@ interface CtxMenu {
 }
 
 export function DskExplorer({ diskId, diskPath }: Props) {
-  const { setViewTarget, setActiveBottomTab, setSelectedFileName, triggerCheck } = useAppStore();
+  const {
+    activeDiskId,
+    topbarImportTrigger,
+    topbarExportTrigger,
+    topbarRemoveTrigger,
+    topbarExportCprTrigger,
+    setViewTarget,
+    setActiveBottomTab,
+    setSelectedFileName,
+    setSelectedFilesForDisk,
+    triggerCheck,
+  } = useAppStore();
   const { emulatorPath, xcartRomsPath } = useSettingsStore();
   const { t } = useI18n();
   const [files, setFiles] = useState<DiskFile[]>([]);
@@ -46,15 +56,18 @@ export function DskExplorer({ diskId, diskPath }: Props) {
   const [exportTarget, setExportTarget] = useState<DiskFile | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [exportCprOpen, setExportCprOpen] = useState(false);
-  const [xcartAvailable, setXcartAvailable] = useState(false);
-  const [xcartRomsReady, setXcartRomsReady] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<DiskFile[]>([]);
   const { execute, loading } = useDiscCommand();
   const explorerRef = useRef<HTMLDivElement>(null);
+  const lastImportTriggerRef = useRef(0);
+  const lastExportTriggerRef = useRef(0);
+  const lastRemoveTriggerRef = useRef(0);
+  const lastExportCprTriggerRef = useRef(0);
 
   const handleSelectionChange = (keys: string[]) => {
     setSelectedKeys(keys);
+    setSelectedFilesForDisk(diskId, keys);
     setSelectedFileName(keys.length === 1 ? keys[0] : null);
   };
 
@@ -66,25 +79,11 @@ export function DskExplorer({ diskId, diskPath }: Props) {
       setTotalSize(parsed.total_size);
       setFreeSpace(parsed.free_space);
       setSelectedKeys([]);
+      setSelectedFilesForDisk(diskId, []);
     }
-  }, [diskPath, execute]);
+  }, [diskId, diskPath, execute, setSelectedFilesForDisk]);
 
   useEffect(() => { refresh(); }, [refresh]);
-
-  useEffect(() => {
-    let alive = true;
-    Promise.all([
-      checkXcartAvailable().catch(() => false),
-      checkXcartRomsReady(xcartRomsPath).catch(() => false),
-    ]).then(([available, romsReady]) => {
-      if (!alive) return;
-      setXcartAvailable(available);
-      setXcartRomsReady(romsReady);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [xcartRomsPath]);
 
   // Close ctx menu on outside click
   useEffect(() => {
@@ -100,22 +99,40 @@ export function DskExplorer({ diskId, diskPath }: Props) {
   };
 
   const selectedFiles = files.filter((f) => selectedKeys.includes(f.name));
-  const emulatorRunFile = selectedFiles[0]?.name;
-
-  const handleExportSelected = () => {
-    if (selectedFiles.length === 0) return;
-    setExportTarget(selectedFiles.length === 1 ? selectedFiles[0] : null);
-    setExportOpen(true);
-  };
-
-  const handleRemoveSelected = () => {
-    setRemoveTarget(selectedFiles);
-  };
 
   const handleOperationDone = () => {
     refresh();
     triggerCheck();
   };
+
+  useEffect(() => {
+    if (topbarImportTrigger === lastImportTriggerRef.current) return;
+    lastImportTriggerRef.current = topbarImportTrigger;
+    if (activeDiskId !== diskId) return;
+    setImportOpen(true);
+  }, [activeDiskId, diskId, topbarImportTrigger]);
+
+  useEffect(() => {
+    if (topbarExportTrigger === lastExportTriggerRef.current) return;
+    lastExportTriggerRef.current = topbarExportTrigger;
+    if (activeDiskId !== diskId || selectedFiles.length === 0) return;
+    setExportTarget(selectedFiles.length === 1 ? selectedFiles[0] : null);
+    setExportOpen(true);
+  }, [activeDiskId, diskId, topbarExportTrigger, selectedFiles]);
+
+  useEffect(() => {
+    if (topbarRemoveTrigger === lastRemoveTriggerRef.current) return;
+    lastRemoveTriggerRef.current = topbarRemoveTrigger;
+    if (activeDiskId !== diskId || selectedFiles.length === 0) return;
+    setRemoveTarget(selectedFiles);
+  }, [activeDiskId, diskId, topbarRemoveTrigger, selectedFiles]);
+
+  useEffect(() => {
+    if (topbarExportCprTrigger === lastExportCprTriggerRef.current) return;
+    lastExportCprTriggerRef.current = topbarExportCprTrigger;
+    if (activeDiskId !== diskId) return;
+    setExportCprOpen(true);
+  }, [activeDiskId, diskId, topbarExportCprTrigger]);
 
   const formatHex = (v: number | undefined | null) =>
     v != null ? `0x${v.toString(16).toUpperCase().padStart(4, '0')}` : '—';
@@ -219,67 +236,6 @@ export function DskExplorer({ diskId, diskPath }: Props) {
     <div className={styles.explorer} ref={explorerRef}>
       {/* Toolbar */}
       <Toolbar>
-        <Button variant="primary" icon={<Upload size={12} />} onClick={() => setImportOpen(true)}>
-          {t('explorer_import')}
-        </Button>
-        <Button
-          variant="primary"
-          icon={<Download size={12} />}
-          onClick={handleExportSelected}
-          disabled={selectedKeys.length === 0}
-        >
-          {t('explorer_export')}
-        </Button>
-        <Button
-          icon={<Trash2 size={12} />}
-          variant="danger"
-          onClick={handleRemoveSelected}
-          disabled={selectedKeys.length === 0}
-        >
-          {t('explorer_remove')}
-        </Button>
-        <Button
-          variant="primary"
-          icon={<ShieldCheck size={12} />}
-          onClick={() => triggerCheck()}
-        >
-          {t('explorer_check')}
-        </Button>
-        <ToolbarSeparator />
-        <Button
-          variant="primary"
-          icon={<Cpu size={12} />}
-          onClick={async () => {
-            if (!emulatorPath) return;
-            await launchEmulator({ emulatorPath, diskPath, runFile: emulatorRunFile });
-          }}
-          disabled={!emulatorPath}
-          title={
-            !emulatorPath
-              ? 'Configure emulator path in Settings'
-              : emulatorRunFile
-                ? `${t('explorer_emulator')} · run"${emulatorRunFile}"`
-                : t('explorer_emulator')
-          }
-        >
-          {t('explorer_emulator')}
-        </Button>
-        <Button
-          variant="primary"
-          icon={<Gamepad2 size={12} />}
-          onClick={() => setExportCprOpen(true)}
-          disabled={!xcartAvailable || !xcartRomsReady}
-          title={
-            !xcartAvailable
-              ? t('explorer_export_cpr_unavailable')
-              : !xcartRomsReady
-                ? t('explorer_export_cpr_roms_missing')
-                : t('explorer_export_cpr')
-          }
-        >
-          {t('explorer_export_cpr')}
-        </Button>
-        <ToolbarSeparator />
         <ToolbarSpacer />
         <span className={styles.stats}>
           {files.length} {t('explorer_files')} · {formatBytes(usedSpace)} {t('explorer_used')} · {formatBytes(freeSpace)} {t('explorer_free')}

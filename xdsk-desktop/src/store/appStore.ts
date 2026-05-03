@@ -30,6 +30,7 @@ interface AppStore {
 
   // Currently selected file in the explorer (1 selection)
   selectedFileName: string | null;
+  selectedFilesByDisk: Record<string, string[]>;
 
   // disc CLI status
   discVersion: string | null;
@@ -62,6 +63,8 @@ interface AppStore {
 
   // Actions — selection
   setSelectedFileName: (name: string | null) => void;
+  setSelectedFilesForDisk: (diskId: string, names: string[]) => void;
+  clearSelectedFilesForDisk: (diskId: string) => void;
 
   // Actions — cli status
   setDiscVersion: (v: string | null) => void;
@@ -70,6 +73,16 @@ interface AppStore {
   // Check trigger
   checkTrigger: number;
   triggerCheck: () => void;
+
+  // Topbar action triggers
+  topbarImportTrigger: number;
+  topbarExportTrigger: number;
+  topbarRemoveTrigger: number;
+  topbarExportCprTrigger: number;
+  triggerTopbarImport: () => void;
+  triggerTopbarExport: () => void;
+  triggerTopbarRemove: () => void;
+  triggerTopbarExportCpr: () => void;
 
   // View output clear trigger
   viewClearTrigger: number;
@@ -95,11 +108,16 @@ export const useAppStore = create<AppStore>()(
       isBottomPanelOpen: false,
       viewTarget: null,
       selectedFileName: null,
+      selectedFilesByDisk: {},
       discVersion: null,
       isDiscAvailable: false,
       consoleEntries: [],
       diskHealth: {},
       checkTrigger: 0,
+      topbarImportTrigger: 0,
+      topbarExportTrigger: 0,
+      topbarRemoveTrigger: 0,
+      topbarExportCprTrigger: 0,
       viewClearTrigger: 0,
 
       addOpenDisk: (path) => {
@@ -128,7 +146,9 @@ export const useAppStore = create<AppStore>()(
             s.activeDiskId === id ? (openTabs[openTabs.length - 1]?.id ?? disks[disks.length - 1]?.id ?? null) : s.activeDiskId;
           const nextHealth = { ...s.diskHealth };
           delete nextHealth[id];
-          return { openDisks: disks, activeDiskId, diskHealth: nextHealth };
+          const nextSelection = { ...s.selectedFilesByDisk };
+          delete nextSelection[id];
+          return { openDisks: disks, activeDiskId, diskHealth: nextHealth, selectedFilesByDisk: nextSelection };
         }),
 
       setActiveDisk: (id) => set((s) => ({
@@ -176,11 +196,28 @@ export const useAppStore = create<AppStore>()(
 
       setViewTarget: (target) => set({ viewTarget: target }),
       setSelectedFileName: (name) => set({ selectedFileName: name }),
+      setSelectedFilesForDisk: (diskId, names) =>
+        set((s) => ({
+          selectedFilesByDisk: {
+            ...s.selectedFilesByDisk,
+            [diskId]: names,
+          },
+        })),
+      clearSelectedFilesForDisk: (diskId) =>
+        set((s) => {
+          const next = { ...s.selectedFilesByDisk };
+          delete next[diskId];
+          return { selectedFilesByDisk: next };
+        }),
 
       setDiscVersion: (v) => set({ discVersion: v }),
       setDiscAvailable: (a) => set({ isDiscAvailable: a }),
 
       triggerCheck: () => set((s) => ({ checkTrigger: s.checkTrigger + 1 })),
+      triggerTopbarImport: () => set((s) => ({ topbarImportTrigger: s.topbarImportTrigger + 1 })),
+      triggerTopbarExport: () => set((s) => ({ topbarExportTrigger: s.topbarExportTrigger + 1 })),
+      triggerTopbarRemove: () => set((s) => ({ topbarRemoveTrigger: s.topbarRemoveTrigger + 1 })),
+      triggerTopbarExportCpr: () => set((s) => ({ topbarExportCprTrigger: s.topbarExportCprTrigger + 1 })),
 
       triggerViewClear: () => set((s) => ({ viewClearTrigger: s.viewClearTrigger + 1 })),
 
