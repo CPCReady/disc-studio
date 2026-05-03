@@ -64,3 +64,20 @@ pub async fn xcart_version(app: tauri::AppHandle) -> Result<String, String> {
 
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
+
+#[tauri::command]
+pub fn xcart_roms_ready(path: String) -> bool {
+    let trimmed = path.trim();
+    if trimmed.is_empty() {
+        return false;
+    }
+
+    let base = std::path::Path::new(trimmed);
+    if !base.is_dir() {
+        return false;
+    }
+
+    ["os.rom", "basic.rom", "amsdos.rom"]
+        .iter()
+        .all(|name| base.join(name).is_file())
+}

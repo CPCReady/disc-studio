@@ -22,6 +22,7 @@ pub fn run() {
             commands::xcart::run_xcart,
             commands::xcart::xcart_available,
             commands::xcart::xcart_version,
+            commands::xcart::xcart_roms_ready,
             commands::emulator::launch_emulator,
         ])
         .run(tauri::generate_context!())

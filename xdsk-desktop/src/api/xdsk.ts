@@ -36,6 +36,10 @@ export async function getXcartVersion(): Promise<string> {
   return invoke<string>('xcart_version');
 }
 
+export async function checkXcartRomsReady(path: string): Promise<boolean> {
+  return invoke<boolean>('xcart_roms_ready', { path });
+}
+
 export interface EmulatorLaunchOptions {
   emulatorPath: string;
   diskPath: string;

@@ -2,8 +2,7 @@
 
 use crate::amsdos::{has_header, AmsdosHeader};
 use crate::cli::ViewFormat;
-use crate::dsk::{DirEntry, Dsk, DIR_ENTRY_SIZE, MAX_DIR_ENTRIES};
-use crate::utils;
+use crate::dsk::Dsk;
 use crate::viewers::basic::is_tokenized;
 use crate::viewers::{AsciiViewer, BasicViewer, DisasmViewer, HexViewer};
 use anyhow::{Context, Result};
@@ -120,63 +119,24 @@ fn detect_format(data: &[u8], filename: &str, amsdos: &Option<AmsdosHeader>) -> 
 }
 
 fn read_file_data(dsk: &Dsk, filename: &str) -> Result<(Vec<u8>, Option<AmsdosHeader>)> {
-    let dir_start = crate::dsk::DskHeader::SIZE + crate::dsk::TrackInfo::SIZE;
-    let mut file_data = Vec::new();
-    let mut amsdos_header: Option<AmsdosHeader> = None;
-    let mut first_block = true;
-    let mut total_pages = 0usize;
+    let upper = filename.to_uppercase();
+    let raw = dsk
+        .read_file_data(&upper)?
+        .ok_or_else(|| anyhow::anyhow!("File not found in DSK: {}", filename))?;
 
-    for i in 0..MAX_DIR_ENTRIES {
-        let offset = dir_start + (i * DIR_ENTRY_SIZE);
-        if offset + DIR_ENTRY_SIZE > dsk.data().len() {
-            break;
-        }
+    if raw.len() >= 128 && has_header(&raw) {
+        let amsdos = AmsdosHeader::from_bytes(&raw[..128]).ok();
+        let mut payload = raw[128..].to_vec();
 
-        let dir_entry = DirEntry::from_bytes(&dsk.data()[offset..offset + DIR_ENTRY_SIZE])?;
-        if dir_entry.is_deleted() {
-            continue;
-        }
-
-        let entry_name =
-            utils::from_amsdos_name(&[&dir_entry.name[..], &dir_entry.ext[..]].concat());
-        if entry_name.to_uppercase() != filename.to_uppercase() {
-            continue;
-        }
-
-        total_pages += dir_entry.num_pages as usize;
-        let num_blocks = dir_entry.num_pages.div_ceil(8);
-
-        for j in 0..num_blocks as usize {
-            if j < 16 && dir_entry.blocks[j] != 0 {
-                let block = dsk.read_block(dir_entry.blocks[j])?;
-
-                if first_block && j == 0 {
-                    if has_header(&block) {
-                        amsdos_header = AmsdosHeader::from_bytes(&block[..128]).ok();
-                        file_data.extend_from_slice(&block[128..]);
-                    } else {
-                        file_data.extend_from_slice(&block);
-                    }
-                    first_block = false;
-                } else {
-                    file_data.extend_from_slice(&block);
-                }
+        if let Some(ref h) = amsdos {
+            let logical = h.logical_length as usize;
+            if logical > 0 && payload.len() > logical {
+                payload.truncate(logical);
             }
         }
+
+        return Ok((payload, amsdos));
     }
 
-    // Truncate to real size
-    if let Some(ref h) = amsdos_header {
-        let real = h.logical_length as usize;
-        if file_data.len() > real {
-            file_data.truncate(real);
-        }
-    } else {
-        let real = total_pages * 128;
-        if file_data.len() > real {
-            file_data.truncate(real);
-        }
-    }
-
-    Ok((file_data, amsdos_header))
+    Ok((raw, None))
 }

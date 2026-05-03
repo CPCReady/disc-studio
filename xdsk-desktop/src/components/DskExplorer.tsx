@@ -7,7 +7,7 @@ import { useSettingsStore } from '../store/settingsStore';
 import { useDiscCommand } from '../hooks/useDiscCommand';
 import { parseListJson } from '../utils/parsers';
 import { formatBytes, fileTypeLabel } from '../utils/formatters';
-import { checkXcartAvailable, launchEmulator } from '../api/xdsk';
+import { checkXcartAvailable, checkXcartRomsReady, launchEmulator } from '../api/xdsk';
 import { useI18n } from '../i18n/useI18n';
 import { Toolbar, ToolbarSeparator, ToolbarSpacer } from './Toolbar';
 import { Button } from './Button';
@@ -35,7 +35,7 @@ interface CtxMenu {
 }
 
 export function DskExplorer({ diskId, diskPath }: Props) {
-  const { setViewTarget, setActiveBottomTab, setSelectedFileName, triggerCheck, triggerViewClear } = useAppStore();
+  const { setViewTarget, setActiveBottomTab, setSelectedFileName, triggerCheck } = useAppStore();
   const { emulatorPath, xcartRomsPath } = useSettingsStore();
   const { t } = useI18n();
   const [files, setFiles] = useState<DiskFile[]>([]);
@@ -47,6 +47,7 @@ export function DskExplorer({ diskId, diskPath }: Props) {
   const [exportOpen, setExportOpen] = useState(false);
   const [exportCprOpen, setExportCprOpen] = useState(false);
   const [xcartAvailable, setXcartAvailable] = useState(false);
+  const [xcartRomsReady, setXcartRomsReady] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<DiskFile[]>([]);
   const { execute, loading } = useDiscCommand();
@@ -71,8 +72,19 @@ export function DskExplorer({ diskId, diskPath }: Props) {
   useEffect(() => { refresh(); }, [refresh]);
 
   useEffect(() => {
-    checkXcartAvailable().then(setXcartAvailable).catch(() => setXcartAvailable(false));
-  }, []);
+    let alive = true;
+    Promise.all([
+      checkXcartAvailable().catch(() => false),
+      checkXcartRomsReady(xcartRomsPath).catch(() => false),
+    ]).then(([available, romsReady]) => {
+      if (!alive) return;
+      setXcartAvailable(available);
+      setXcartRomsReady(romsReady);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [xcartRomsPath]);
 
   // Close ctx menu on outside click
   useEffect(() => {
@@ -256,8 +268,14 @@ export function DskExplorer({ diskId, diskPath }: Props) {
           variant="primary"
           icon={<Gamepad2 size={12} />}
           onClick={() => setExportCprOpen(true)}
-          disabled={!xcartAvailable}
-          title={xcartAvailable ? t('explorer_export_cpr') : t('explorer_export_cpr_unavailable')}
+          disabled={!xcartAvailable || !xcartRomsReady}
+          title={
+            !xcartAvailable
+              ? t('explorer_export_cpr_unavailable')
+              : !xcartRomsReady
+                ? t('explorer_export_cpr_roms_missing')
+                : t('explorer_export_cpr')
+          }
         >
           {t('explorer_export_cpr')}
         </Button>
@@ -293,8 +311,8 @@ export function DskExplorer({ diskId, diskPath }: Props) {
             onSelectionChange={handleSelectionChange}
             onRowClick={(row) => {
               const name = (row as unknown as DiskFile).name;
-              setViewTarget(null);
-              triggerViewClear();
+              setViewTarget({ diskId, diskPath, fileName: name });
+              setActiveBottomTab('view');
               setSelectedFileName(name);
             }}
             onRowContextMenu={(row, e) => handleRowRightClick(row as unknown as DiskFile, e)}

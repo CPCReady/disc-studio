@@ -60,6 +60,7 @@ const es: Record<TranslationKey, string> = {
   explorer_emulator: 'Emulador',
   explorer_export_cpr: 'Export CPR',
   explorer_export_cpr_unavailable: 'xcart no disponible',
+  explorer_export_cpr_roms_missing: 'Configura la ruta de ROMs de XCART en Ajustes',
   explorer_load_addr: 'Carga',
   explorer_exec_addr: 'Ejec',
   explorer_dsk_path: 'Ruta',

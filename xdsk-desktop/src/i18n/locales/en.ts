@@ -63,6 +63,7 @@ const en = {
   explorer_emulator: 'Emulator',
   explorer_export_cpr: 'Export CPR',
   explorer_export_cpr_unavailable: 'xcart not available',
+  explorer_export_cpr_roms_missing: 'Configure XCART ROMs path in Settings',
   explorer_load_addr: 'Load',
   explorer_exec_addr: 'Exec',
   explorer_dsk_path: 'Path',

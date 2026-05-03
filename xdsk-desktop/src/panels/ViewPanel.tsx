@@ -1,6 +1,6 @@
 // MIT License
 // Copyright (c) Destroyer 2026.
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Eye } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { useDiscCommand } from '../hooks/useDiscCommand';
@@ -22,9 +22,9 @@ const FORMAT_OPTIONS = [
 ];
 
 export function ViewPanel() {
-  const { activeDiskId, openDisks, viewTarget, selectedFileName, viewClearTrigger } = useAppStore();
+  const { activeDiskId, openDisks, viewTarget, selectedFileName } = useAppStore();
   const { t } = useI18n();
-  const { execute, loading } = useDiscCommand();
+  const { execute, loading, error } = useDiscCommand();
   const [diskPath, setDiskPath] = useState('');
   const [fileName, setFileName] = useState('');
   const [format, setFormat] = useState('auto');
@@ -43,16 +43,24 @@ export function ViewPanel() {
     }
   }, [viewTarget, activeDisk, selectedFileName]);
 
-  // Clear current output every time a file is clicked in explorer.
-  useEffect(() => {
-    setOutput('');
-  }, [viewClearTrigger]);
-
-  const handleView = async () => {
+  const runView = useCallback(async () => {
     if (!diskPath || !fileName) return;
     const result = await execute(['view', diskPath, fileName, '--format', format]);
     setOutput(result ? result.stdout || result.stderr : '');
+  }, [diskPath, fileName, format, execute]);
+
+  const handleView = async () => {
+    await runView();
   };
+
+  useEffect(() => {
+    if (!diskPath || !fileName) return;
+    void runView();
+  }, [diskPath, fileName, format, runView]);
+
+  useEffect(() => {
+    if (error) setOutput(error);
+  }, [error]);
 
   if (!activeDisk && !viewTarget) {
     return <EmptyState icon={<Eye size={28} />} title={t('view_no_disk')} />;
