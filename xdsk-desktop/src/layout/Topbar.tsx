@@ -48,7 +48,7 @@ export function Topbar() {
 
   const hasActiveDisk = Boolean(activeDisk);
   const hasSelection = selectedFiles.length > 0;
-  const canRunEmulator = hasActiveDisk && hasSelection && Boolean(emulatorPath);
+  const canRunEmulator = hasActiveDisk && Boolean(emulatorPath);
   const canExportCpr = hasActiveDisk && xcartAvailable && xcartRomsReady;
 
   return (
@@ -79,7 +79,7 @@ export function Topbar() {
           icon={<Cpu size={13} />}
           variant="default"
           onClick={async () => {
-            if (!activeDisk || !emulatorPath || !hasSelection) return;
+            if (!activeDisk || !emulatorPath) return;
             await launchEmulator({ emulatorPath, diskPath: activeDisk.path, runFile: emulatorRunFile });
           }}
           disabled={!canRunEmulator}

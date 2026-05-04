@@ -35,9 +35,14 @@ pub async fn launch_emulator(
         "--insert".to_string(),
         disk_path.clone(),
     ];
-    if let Some(ref file) = run_file {
-        rvm_args.push(format!("--command=run\"{}\"\n", file));
-    }
+    
+    // Add command: run"FILE"\n if file specified, otherwise CAT\n
+    let command = if let Some(ref file) = run_file {
+        format!("--command=run\"{}\"\n", file)
+    } else {
+        "--command=CAT\n".to_string()
+    };
+    rvm_args.push(command);
 
     #[cfg(target_os = "macos")]
     {
